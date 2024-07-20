@@ -6,6 +6,9 @@
 /storage/*.key
 /vendor
 .env
+.env.develop
+.env.staging
+.env.production
 .env.backup
 .env.production
 .phpunit.result.cache
@@ -17,3 +20,10 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+docker-compose.yml
+schema-directives.graphql
+programmatic-types.graphql
+_lighthouse_ide_helper.php
+.serverless
+/app/OAUTH_SECRETS/oauth-private.key
+/app/OAUTH_SECRETS/oauth-public.key
