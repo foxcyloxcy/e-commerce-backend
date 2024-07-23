@@ -27,12 +27,19 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::where('sub_category_id', $request->sub_category_id)
+            $data = Item::when(!empty($request->sub_category_id), function ($q) use ($request) {
+                $q->where('sub_category_id', $request->sub_category_id);
+            })
             ->when(!empty($request->filter['properties']), function ($q) use ($request) {
                 $q->whereHas('itemProperty', function ($q1) use ($request) {
                     $q1->whereIn('sub_property_value_id', explode(',',$request->filter['properties']));
                 });
-            })->paginate($size);
+            })
+            ->when(!empty($request->filter['keyword']), function ($q) use ($request) {
+                $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%')
+                ->orWhere('item_description', 'LIKE','%'.$request->filter['keyword'].'%');
+            })
+            ->paginate($size);
 
             return response(['data' =>  $data], 200);
 

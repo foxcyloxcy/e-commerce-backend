@@ -53,6 +53,11 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('', [\App\Http\Controllers\TransactionController::class, 'store']);
         });
 
+        #Me
+        Route::group(['prefix' => 'me'], function () {
+            Route::get('profile', [\App\Http\Controllers\MeController::class, 'profile']);
+        });
+
 
     });
 });
@@ -66,6 +71,11 @@ Route::group(['prefix' => 'global'], function () {
     Route::group(['prefix' => 'sub-category'], function () {
         Route::get('', [\App\Http\Controllers\SubCategoryController::class, 'index']);
         Route::get('properties', [\App\Http\Controllers\SubCategoryController::class, 'properties']);
+    });
+
+    Route::group(['prefix' => 'items'], function () {
+        Route::get('', [\App\Http\Controllers\ItemController::class, 'index']);
+        Route::get('{item}', [\App\Http\Controllers\ItemController::class, 'show']);
     });
  });
 
