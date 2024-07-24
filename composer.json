@@ -11,6 +11,7 @@
         "laravel/passport": "^12.2",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "webpatser/laravel-uuid": "^4.0"
     },
     "require-dev": {

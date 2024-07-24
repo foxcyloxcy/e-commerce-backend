@@ -16,7 +16,8 @@ class ItemResource extends JsonResource
     {
         return  [
             'item_name' => $this->item_name,
-            'item_description' => $this->item_description
+            'item_description' => $this->item_description,
+            'images' => $this->itemImage
         ];
     }
 }

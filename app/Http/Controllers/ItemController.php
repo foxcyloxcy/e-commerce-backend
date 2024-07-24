@@ -11,6 +11,8 @@ use App\Models\SubCategoryProperty;
 use App\Models\SubCategoryPropertyValue;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\Item\ItemResource;
+use Illuminate\Support\Facades\Storage;
+use App\Models\ItemImage;
 
 class ItemController extends Controller
 {
@@ -71,7 +73,20 @@ class ItemController extends Controller
                     'sub_property_value_id' => $val
                 ]);
             }
-
+            if(!empty($request->file('imgs'))){
+                foreach($request->file('imgs') as $val){
+                    // Save the file in S3 Storage
+                    $path = Storage::putFile('items', $val);
+                    // Get the URL
+                    $url = Storage::url($path);
+                    // Save to database
+                    ItemImage::create([
+                        'item_id' => $item->id,
+                        'image_url' => $url
+                    ]);
+                }
+            }
+          
             DB::commit();
 
             return response([
