@@ -47,7 +47,7 @@ class StoreTransactionRequest extends FormRequest
     public function failedValidation(Validator $validator): array
     {
         $errors = $validator->errors();
-        $response = response()->json(['message' => $errors->messages()], 200);
+        $response = response()->json(['message' => $errors->messages()], 422);
         throw new HttpResponseException($response);
     }
 }
