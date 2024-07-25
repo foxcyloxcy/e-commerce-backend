@@ -19,6 +19,13 @@ Route::get('/test', function () {
     return 'Api works!';
 });
 
+// test notification
+Route::group(['prefix' => 'notification'], function () {
+    Route::group(['prefix' => 'test'], function () {
+        Route::post('', [\App\Http\Controllers\AuthController::class, 'testEmail']);
+    });
+});
+
 Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
 Route::post('sign-up', [\App\Http\Controllers\AuthController::class, 'signUp']);
 

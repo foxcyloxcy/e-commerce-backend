@@ -12,6 +12,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Notifications\TestEmailNotification;
+use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
@@ -84,5 +86,11 @@ class AuthController extends Controller
             DB::rollBack();
             return response(['message' => $e->getMessage()], 400);
         }
+    }
+
+    public function testEmail(Request $request) {
+        $user = User::where('id', 1)->first();
+        $user->notify(new TestEmailNotification());
+        return 'success';
     }
 }
