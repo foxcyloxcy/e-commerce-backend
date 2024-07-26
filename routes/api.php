@@ -28,6 +28,7 @@ Route::group(['prefix' => 'notification'], function () {
 
 Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
 Route::post('sign-up', [\App\Http\Controllers\AuthController::class, 'signUp']);
+Route::post('verify', [\App\Http\Controllers\AuthController::class, 'verifyUser']);
 
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
