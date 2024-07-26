@@ -47,11 +47,24 @@ class AuthController extends Controller
 
                 //user data
                 $user = User::where('email', $param['username'])->orWhere('mobile_number', $param['username'])->first();
+                if (!$user->email_verified_at) {
+                    //add verification code to user
+                    $code = rand(100000, 999999); // 6 digits
+                    VerificationCode::create([
+                        'user_id' => $user->id,
+                        'code' => $code,
+                        'expired_at' => Carbon::now()->addMinutes(5),
+                    ]);
 
+                    $user->notify(new UserVerificationNotification($code));
+
+                    return response(['message' => 'Please Verify your Account', 'data' => ['user' => $user, 'redirect' => 'verify']], 200);
+
+                }
                 // generate the access token with the correct scope
                 $tokenResult = $user->createToken('User Access Token', ['auth-api']);
 
-                return response(['message' => 'Sign In Successful', 'data' => ['access_token' => $tokenResult->accessToken, 'user' => $user]], 200);
+                return response(['message' => 'Sign In Successful', 'data' => ['access_token' => $tokenResult->accessToken, 'user' => $user, 'redirect' => 'dashboard']], 200);
             } else {
                 return response(['message' => array(['password' => 'Invalid Account Credentials.'])], 400);
             }
