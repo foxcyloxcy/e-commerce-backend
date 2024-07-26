@@ -11,6 +11,8 @@ use App\Models\SubCategoryProperty;
 use App\Models\SubCategoryPropertyValue;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\Item\ItemResource;
+use Illuminate\Support\Facades\Storage;
+use App\Models\ItemImage;
 
 class ItemController extends Controller
 {
@@ -27,12 +29,19 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::where('sub_category_id', $request->sub_category_id)
+            $data = Item::when(!empty($request->sub_category_id), function ($q) use ($request) {
+                $q->where('sub_category_id', $request->sub_category_id);
+            })
             ->when(!empty($request->filter['properties']), function ($q) use ($request) {
                 $q->whereHas('itemProperty', function ($q1) use ($request) {
                     $q1->whereIn('sub_property_value_id', explode(',',$request->filter['properties']));
                 });
-            })->paginate($size);
+            })
+            ->when(!empty($request->filter['keyword']), function ($q) use ($request) {
+                $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%')
+                ->orWhere('item_description', 'LIKE','%'.$request->filter['keyword'].'%');
+            })
+            ->paginate($size);
 
             return response(['data' =>  $data], 200);
 
@@ -64,7 +73,20 @@ class ItemController extends Controller
                     'sub_property_value_id' => $val
                 ]);
             }
-
+            if(!empty($request->file('imgs'))){
+                foreach($request->file('imgs') as $val){
+                    // Save the file in S3 Storage
+                    $path = Storage::putFile('items', $val);
+                    // Get the URL
+                    $url = Storage::url($path);
+                    // Save to database
+                    ItemImage::create([
+                        'item_id' => $item->id,
+                        'image_url' => $url
+                    ]);
+                }
+            }
+          
             DB::commit();
 
             return response([

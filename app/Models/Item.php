@@ -40,6 +40,13 @@ class Item extends Model
     ];
 
     /**
+     * Append Attribute
+     */
+    protected $appends = [
+        'default_image'
+    ];
+
+    /**
      * boot
      *
      * @return void
@@ -60,6 +67,19 @@ class Item extends Model
         return 'uuid';
     }
 
+    /**
+     * Attributes
+     */
+
+    // Get Default Photo
+    public function getDefaultImageAttribute()
+    {
+        return $this->itemImage ? $this->itemImage->first() : null;
+    }
+
+    /**
+     * Relationships
+     */
     public function itemProperty(): HasMany
     {
         return $this->hasMany(ItemProperty::class, 'item_id');
@@ -75,15 +95,9 @@ class Item extends Model
         return $this->hasMany(ItemComment::class, 'item_id');
     }
 
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(User::class, 'id');
-    // }
+    public function itemImage(): HasMany
+    {
+        return $this->hasMany(ItemImage::class, 'item_id');
+    }
 
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(User::class, 'id');
-    // }
-
-    //relationship with sub category (not yet)
 }
