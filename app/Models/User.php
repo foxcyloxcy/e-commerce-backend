@@ -54,6 +54,13 @@ class User extends Authenticatable
     ];
 
     /**
+     * Append Attribute
+     */
+    protected $appends = [
+        'is_vendor'
+    ];
+
+    /**
      * boot
      *
      * @return void
@@ -65,6 +72,7 @@ class User extends Authenticatable
             $model->uuid = (string) Uuid::generate();
         });
     }
+    
 
     /**
      * Get the route key for the model
@@ -72,6 +80,29 @@ class User extends Authenticatable
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    /**
+     * Attributes
+     */
+
+    // Check if vendor
+    public function getIsVendorAttribute()
+    {
+        return $this->vendor ? 'Yes': 'No';
+    }
+
+    /**
+     * Relationships
+     */
+    public function vendor(): HasOne
+    {
+        return $this->hasOne(Vendor::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class);
     }
 
 }

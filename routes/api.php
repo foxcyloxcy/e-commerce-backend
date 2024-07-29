@@ -63,7 +63,12 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
 
         #Me
         Route::group(['prefix' => 'me'], function () {
+            #Profile
             Route::get('profile', [\App\Http\Controllers\MeController::class, 'profile']);
+            Route::put('profile', [\App\Http\Controllers\MeController::class, 'updatePersonalInfo']);
+            Route::post('profile/vendor', [\App\Http\Controllers\MeController::class, 'updateVendor']);
+            #Items
+            Route::get('items', [\App\Http\Controllers\MeController::class, 'items']);
         });
 
 
