@@ -29,7 +29,7 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::when(!empty($request->sub_category_id), function ($q) use ($request) {
+            $data = Item::with('user')->when(!empty($request->sub_category_id), function ($q) use ($request) {
                 $q->where('sub_category_id', $request->sub_category_id);
             })
             ->when(!empty($request->filter['properties']), function ($q) use ($request) {

@@ -100,4 +100,9 @@ class Item extends Model
         return $this->hasMany(ItemImage::class, 'item_id');
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

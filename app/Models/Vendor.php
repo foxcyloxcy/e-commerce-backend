@@ -6,21 +6,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class SubCategory extends Model
+class Vendor extends Model
 {
     use HasFactory;
 
     /**
-     * The primary key associated with the table.
+     * The attributes that are mass assignable.
      *
-     * @var string
+     * @var array<int, string>
      */
-
-     protected $fillable = [
-        'category_id',
+    protected $fillable = [
+        'user_id',
         'name',
+        'address',
         'status',
+        'logo'
     ];
 
     /**
@@ -33,13 +35,11 @@ class SubCategory extends Model
         'updated_at' => 'datetime'
     ];
 
-    public function category(): BelongsTo
+    /**
+     * Relationships
+     */
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'id');
-    }
-
-    public function subCategoryProperty(): HasMany
-    {
-        return $this->hasMany(SubCategoryProperty::class, 'sub_category_id');
+        return $this->belongsTo(Vendor::class, 'user_id');
     }
 }

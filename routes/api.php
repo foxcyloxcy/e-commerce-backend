@@ -28,6 +28,7 @@ Route::group(['prefix' => 'notification'], function () {
 
 Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
 Route::post('sign-up', [\App\Http\Controllers\AuthController::class, 'signUp']);
+Route::post('verify', [\App\Http\Controllers\AuthController::class, 'verifyUser']);
 
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
@@ -62,7 +63,12 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
 
         #Me
         Route::group(['prefix' => 'me'], function () {
+            #Profile
             Route::get('profile', [\App\Http\Controllers\MeController::class, 'profile']);
+            Route::put('profile', [\App\Http\Controllers\MeController::class, 'updatePersonalInfo']);
+            Route::post('profile/vendor', [\App\Http\Controllers\MeController::class, 'updateVendor']);
+            #Items
+            Route::get('items', [\App\Http\Controllers\MeController::class, 'items']);
         });
 
 

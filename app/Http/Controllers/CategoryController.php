@@ -17,7 +17,7 @@ class CategoryController extends Controller
     {
 
         try {
-            $data = Category::orderBy('id')->get();
+            $data = Category::with('subCategory', 'subCategory.subCategoryProperty', 'subCategory.subCategoryProperty.subCategoryPropertyValue')->orderBy('id')->get();
 
             return response(['data' =>  $data], 200);
 
