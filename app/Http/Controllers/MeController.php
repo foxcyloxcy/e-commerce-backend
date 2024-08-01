@@ -6,10 +6,12 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\VendorBank;
 use App\Models\Item;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\User\UpdateUserDetailsRequest;
 use App\Http\Requests\User\UpdateUserVendorDetailsRequest;
+use App\Http\Requests\Bank\StoreUserBankRequest;
 
 class MeController extends Controller
 {
@@ -87,6 +89,47 @@ class MeController extends Controller
     {
         $size = $request->size ?: 10;
         $data = Item::where('user_id', auth()->user()->id)->whereIn('status', explode(',',$request->status))->paginate($size);
+        try {
+            return response(['data' =>  $data], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Add Bank Details Info
+     *
+     * @param  mixed $request
+     * @param  mixed $user
+     * @return void
+     */
+    protected function addUserBank(StoreUserBankRequest $request)
+    {
+        #Validate
+        $param = $request->validated();
+
+        DB::beginTransaction();
+        try {
+            $bank = VendorBank::create([
+                'user_id' => $request->user_id,
+                'bank_id' => $request->bank_id,
+                'account_fullname' => $request->account_fullname,
+                'account_number' => $request->account_number,
+            ]);
+            DB::commit();
+            return response(['data' =>  $bank, 'message' => 'Successfully Added.'], 200);
+        } catch (\Exception $e) {
+            //Rollback Changes
+            DB::rollback();
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function userBankList(Request $request)
+    {
+        $data = VendorBank::with('bank')->where('user_id', auth()->user()->id)->get();
         try {
             return response(['data' =>  $data], 200);
 
