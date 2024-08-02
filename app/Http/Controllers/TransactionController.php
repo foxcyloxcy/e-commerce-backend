@@ -21,7 +21,7 @@ class TransactionController extends Controller
     {
 
         try {
-            $data = Transaction::with('transactionItem', 'transactionItem.item')->where('seller_id', $request->seller_id)->get();
+            $data = Transaction::with('transactionItem', 'transactionItem.item','vendorBank', 'vendorBank.bank')->where('seller_id', $request->seller_id)->get();
 
             return response(['data' =>  $data], 200);
 
