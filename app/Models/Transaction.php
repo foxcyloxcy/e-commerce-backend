@@ -79,4 +79,9 @@ class Transaction extends Model
         return $this->hasMany(TransactionItem::class, 'transaction_id');
     }
 
+    public function vendorBank(): BelongsTo
+    {
+        return $this->belongsTo(VendorBank::class, 'vendor_bank_id');
+    }
+
 }
