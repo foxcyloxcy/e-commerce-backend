@@ -93,6 +93,10 @@ Route::group(['prefix' => 'global'], function () {
         Route::get('', [\App\Http\Controllers\ItemController::class, 'index']);
         Route::get('{item}', [\App\Http\Controllers\ItemController::class, 'show']);
     });
+
+    Route::group(['prefix' => 'featured'], function () {
+        Route::get('', [\App\Http\Controllers\ItemController::class, 'featured']);
+    });
  });
 
 

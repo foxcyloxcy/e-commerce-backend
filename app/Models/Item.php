@@ -105,4 +105,9 @@ class Item extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function subCategory(): BelongsTo
+    {
+        return $this->belongsTo(SubCategory::class);
+    }
+
 }
