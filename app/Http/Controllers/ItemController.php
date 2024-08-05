@@ -126,4 +126,22 @@ class ItemController extends Controller
         }
 
     }
+
+    protected function featured(Request $request)
+    {
+        // for page size in pagination
+        $size = $request->size ?: 10;
+
+        try {
+            $data = Item::with('subCategory')->where('status', '=', 1)->where('is_featured', '=', 1)
+            ->orderBy('item_name', 'asc')
+            ->paginate($size);
+
+            return response(['data' =>  $data], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
 }
