@@ -76,9 +76,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
 
         #Payment
         Route::group(['prefix' => 'payment'], function () {
-            Route::group(['prefix' => 'stripe'], function () {
-                Route::post('', [\App\Http\Controllers\PaymentController::class, 'processStripePayment']);
-            });
+                Route::post('stripe', [\App\Http\Controllers\PaymentController::class, 'processStripePayment']);
         });
 
     });
