@@ -74,6 +74,12 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('bank-payment', [\App\Http\Controllers\MeController::class, 'addUserBank']);
         });
 
+        #Payment
+        Route::group(['prefix' => 'payment'], function () {
+            Route::group(['prefix' => 'stripe'], function () {
+                Route::post('', [\App\Http\Controllers\PaymentController::class, 'processStripePayment']);
+            });
+        });
 
     });
 });
