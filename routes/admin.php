@@ -29,7 +29,10 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
     Route::group(['prefix' => 'items'], function () {
         Route::get('', [\App\Http\Controllers\AdminItemController::class, 'index']);
         Route::patch('{item}', [\App\Http\Controllers\AdminItemController::class, 'status']);
+        Route::get('{item}', [\App\Http\Controllers\AdminItemController::class, 'show']);
+        Route::get('status/pending', [\App\Http\Controllers\AdminItemController::class, 'pending']);
     });
+   
 });
 
 

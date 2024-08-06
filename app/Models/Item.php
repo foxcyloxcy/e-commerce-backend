@@ -11,6 +11,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Item extends Model
 {
     use HasFactory;
+    // 0 = pending/for approval, 1 = published, 2 = rejected, 3 = purchased, 4 = accepted bid(show only on seller) , 5 = archive or deleted
+    // Statuses
+    const STATUS_PENDING = 0;
+    const STATUS_PUBLISHED = 1;
+    const STATUS_REJECTED = 2;
+    const STATUS_SOLD = 3;
+    const STATUS_BID_ACCEPTED = 4;
+    const STATUS_ARCHIVED = 4;
+
+
+    const STATUSES = [self::STATUS_PENDING => 'Pending', self::STATUS_PUBLISHED => 'Published', self::STATUS_REJECTED => 'Rejected', self::STATUS_SOLD => 'Sold', self::STATUS_BID_ACCEPTED => 'Bid Accepted', self::STATUS_ARCHIVED => 'Archived'];
+
 
     /**
      * The primary key associated with the table.
@@ -43,7 +55,8 @@ class Item extends Model
      * Append Attribute
      */
     protected $appends = [
-        'default_image'
+        'default_image',
+        'status_name'
     ];
 
     /**
@@ -75,6 +88,12 @@ class Item extends Model
     public function getDefaultImageAttribute()
     {
         return $this->itemImage ? $this->itemImage->first() : null;
+    }
+
+    // Get Status Name
+    public function getStatusNameAttribute(): string
+    {
+        return (isset(self::STATUSES[$this->status])) ? self::STATUSES[$this->status] : '';
     }
 
     /**

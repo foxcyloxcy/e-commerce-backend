@@ -8,7 +8,10 @@ use App\Http\Requests\Item\StoreItemRequest;
 use App\Http\Requests\Item\UpdateItemStatusRequest;
 use App\Models\Item;
 use App\Models\ItemProperty;
+use App\Models\SubCategoryProperty;
+use App\Models\SubCategoryPropertyValue;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\Item\ItemResource;
 
 class AdminItemController extends Controller
 {
@@ -56,5 +59,39 @@ class AdminItemController extends Controller
             DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
+    }
+
+    protected function pending(Request $request)
+    {
+        // for page size in pagination
+        $size = $request->size ?: 10;
+        try {
+            $data = Item::where('status', 0)->orderBy('id', 'asc')->paginate($size);
+            return response(['data' =>  $data], 200);
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function show(Item $item)
+    {
+        try {
+            $subCategory = SubCategoryProperty::where('sub_category_id', $item->sub_category_id)->get();
+
+            $data = $subCategory->map(function ($props) use ($item) {
+                return  [
+                    'properties' => $props->name,
+                    'values' => SubCategoryPropertyValue::where('sub_category_property_id', $props->id)->whereIn('id', $item->itemProperty->pluck('sub_property_value_id'))->get()
+                ];
+            });
+
+            return response(['item_details' => new ItemResource($item), 'item_property_details' => $data], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+
     }
 }
