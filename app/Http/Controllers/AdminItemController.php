@@ -12,6 +12,8 @@ use App\Models\SubCategoryProperty;
 use App\Models\SubCategoryPropertyValue;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\Item\ItemResource;
+use App\Notifications\ItemApproveNotification;
+use App\Notifications\ItemDeclineNotification;
 
 class AdminItemController extends Controller
 {
@@ -35,25 +37,42 @@ class AdminItemController extends Controller
     }
 
     /**
-     * Patch Item Status by uuid
+     * Patch Item Status Approved by uuid
      *
      * @param  mixed $request
      * @param  mixed $items
      * @return void
      */
-    protected function status(UpdateItemStatusRequest $request, Item $item)
+    protected function approveItem(Item $item)
     {
-        #Validate
-        $param = $request->validated();
         DB::beginTransaction();
         try {
-            $item->update($param);
+            $item->update(['status' => Item::STATUS_PUBLISHED]);
             DB::commit();
 
             // notification here
+            $item->user->notify(new ItemApproveNotification());
 
+            return response(['data' =>  $item, 'message' => 'Item status successfully approved.'], 200);
+        } catch (\Exception $e) {
+            //Rollback Changes
+            DB::rollback();
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
 
-            return response(['data' =>  $item, 'message' => 'Item status successfully updated.'], 200);
+    protected function declineItem(Request $request, Item $item)
+    {
+
+        DB::beginTransaction();
+        try {
+            $item->update(['status' => Item::STATUS_REJECTED, 'reject_reason' => $request->reason]);
+            DB::commit();
+
+            // notification here
+            $item->user->notify(new ItemDeclineNotification($request));
+
+            return response(['data' =>  $item, 'message' => 'Item status successfully declined.'], 200);
         } catch (\Exception $e) {
             //Rollback Changes
             DB::rollback();

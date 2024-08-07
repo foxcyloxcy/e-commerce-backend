@@ -7,22 +7,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class UserVerificationNotification extends Notification
+class ItemDeclineNotification extends Notification
 {
     use Queueable;
 
     protected $subject;
     protected $mailBlade;
-    protected $code;
+    protected $data;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($code)
+    public function __construct($data)
     {
-        $this->subject = env('APP_NAME') . ' Verification Email';
-        $this->mailBlade = 'mail.content.verification';
-        $this->code = $code;
+        $this->subject = env('APP_NAME') . ' Posting Status';
+        $this->mailBlade = 'mail.content.decline_item';
+        $this->data = $data;
     }
 
     /**
@@ -44,7 +44,7 @@ class UserVerificationNotification extends Notification
                     ->subject($this->subject)
                     ->view($this->mailBlade, [
                         'user' => $notifiable,
-                        'code' => $this->code
+                        'data' => $this->data
                     ]);
     }
 

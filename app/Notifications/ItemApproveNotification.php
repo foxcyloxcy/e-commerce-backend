@@ -7,22 +7,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class UserVerificationNotification extends Notification
+class ItemApproveNotification extends Notification
 {
     use Queueable;
 
     protected $subject;
     protected $mailBlade;
-    protected $code;
+
+    
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($code)
+    public function __construct()
     {
-        $this->subject = env('APP_NAME') . ' Verification Email';
-        $this->mailBlade = 'mail.content.verification';
-        $this->code = $code;
+        $this->subject = env('APP_NAME') . ' Posting Status';
+        $this->mailBlade = 'mail.content.approve_item';
     }
 
     /**
@@ -43,8 +43,7 @@ class UserVerificationNotification extends Notification
         return (new MailMessage)
                     ->subject($this->subject)
                     ->view($this->mailBlade, [
-                        'user' => $notifiable,
-                        'code' => $this->code
+                        'user' => $notifiable
                     ]);
     }
 
