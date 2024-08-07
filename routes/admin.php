@@ -28,7 +28,8 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
     #Items
     Route::group(['prefix' => 'items'], function () {
         Route::get('', [\App\Http\Controllers\AdminItemController::class, 'index']);
-        Route::patch('{item}', [\App\Http\Controllers\AdminItemController::class, 'status']);
+        Route::patch('approve/{item}', [\App\Http\Controllers\AdminItemController::class, 'approveItem']);
+        Route::patch('decline/{item}', [\App\Http\Controllers\AdminItemController::class, 'declineItem']);
         Route::get('{item}', [\App\Http\Controllers\AdminItemController::class, 'show']);
         Route::get('status/pending', [\App\Http\Controllers\AdminItemController::class, 'pending']);
     });
