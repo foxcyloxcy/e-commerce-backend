@@ -20,7 +20,7 @@ class PaymentController extends Controller
                 'currency' => 'aed',
                 // 'source' => $request->stripeToken,
                 'source' => 'tok_mastercard',
-                'description' => 'Test Payment By Ian Pogi2',
+                'description' => 'Test Payment By Ian Joseph Navarro',
             ]);
             
         } catch (\Exception $e) {
