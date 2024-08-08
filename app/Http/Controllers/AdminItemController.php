@@ -66,13 +66,13 @@ class AdminItemController extends Controller
 
         DB::beginTransaction();
         try {
-            $item->update(['status' => Item::STATUS_REJECTED, 'reject_reason' => $request->reason]);
+            $item->update(['status' => Item::STATUS_REJECTED, 'reject_reason' => $request->reject_reason]);
             DB::commit();
 
             // notification here
             $item->user->notify(new ItemDeclineNotification($request));
 
-            return response(['data' =>  $item, 'message' => 'Item status successfully declined.'], 200);
+            return response(['data' =>  $item, 'message' => 'Item status successfully rejected.'], 200);
         } catch (\Exception $e) {
             //Rollback Changes
             DB::rollback();
