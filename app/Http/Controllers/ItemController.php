@@ -29,7 +29,8 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::with('user')->when(!empty($request->sub_category_id), function ($q) use ($request) {
+            $data = Item::with('user')->where('status', Item::STATUS_PUBLISHED)
+            ->when(!empty($request->sub_category_id), function ($q) use ($request) {
                 $q->where('sub_category_id', $request->sub_category_id);
             })
             ->when(!empty($request->filter['properties']), function ($q) use ($request) {
@@ -40,6 +41,15 @@ class ItemController extends Controller
             ->when(!empty($request->filter['keyword']), function ($q) use ($request) {
                 $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%')
                 ->orWhere('item_description', 'LIKE','%'.$request->filter['keyword'].'%');
+            })
+            ->when(!empty($request->filter['min_price']) || !empty($request->filter['max_price']), function ($q) use ($request) {
+                if(!empty($request->filter['min_price']) && empty($request->filter['max_price'])){
+                    $q->where('price', '>=', $request->filter['min_price']);
+                }elseif(empty($request->filter['min_price']) && !empty($request->filter['max_price'])){
+                    $q->where('price', '<=', $request->filter['max_price']);
+                }else{
+                    $q->whereBetween('price', [$request->filter['min_price'], $request->filter['max_price']]);
+                }
             })
             ->paginate($size);
 
@@ -133,7 +143,7 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::with('subCategory')->where('status', '=', 1)->where('is_featured', '=', 1)
+            $data = Item::with('subCategory')->where('status', Item::STATUS_PUBLISHED)->where('is_featured', 1)
             ->orderBy('item_name', 'asc')
             ->paginate($size);
 
