@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\LoginRequest;
 use App\Http\Requests\User\RegistrationRequest;
 use App\Http\Requests\User\VerifyUserRequest;
+use App\Http\Requests\User\ChangePasswordRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
@@ -172,5 +173,39 @@ class AuthController extends Controller
         $user = User::where('id', 1)->first();
         $user->notify(new TestEmailNotification());
         return 'success';
+    }
+
+    /**
+     * Update password
+     *
+     * @param  mixed $request
+     * @param  mixed $user
+     * @return void
+     */
+    public function changePassword(ChangePasswordRequest $request)
+    {
+         #Validate
+         $form = $request->validated();
+
+         DB::beginTransaction();
+ 
+         try {
+            $user = User::find(auth()->user()->id);
+            
+            // check if password is same with current password
+            if (Hash::check($form['current_password'], $user->password)) {
+                $user->password = Hash::make($form['password']);
+                $user->update();
+                DB::commit();
+                return response(['data' =>  $user, 'message' => 'Password was successfully updated.'], 200);
+            }
+ 
+            return response(['message' =>  ['current_password' => ['Invalid password.']]], 401);
+         } catch (\Exception $e) {
+             //Rollback Changes
+             DB::rollback();
+ 
+             return response(['message' => $e->getMessage()], 400);
+        }
     }
 }
