@@ -33,6 +33,11 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
         Route::get('{item}', [\App\Http\Controllers\AdminItemController::class, 'show']);
         Route::get('status/pending', [\App\Http\Controllers\AdminItemController::class, 'pending']);
     });
+
+    #Me
+    Route::group(['prefix' => 'me'], function () {
+        Route::put('change-password', [\App\Http\Controllers\AdminAuthController::class, 'changePassword']);
+    });
    
 });
 

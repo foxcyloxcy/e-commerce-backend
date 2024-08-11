@@ -72,12 +72,17 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             #Payments
             Route::get('bank-payment', [\App\Http\Controllers\MeController::class, 'userBankList']);
             Route::post('bank-payment', [\App\Http\Controllers\MeController::class, 'addUserBank']);
+
+            #Chagnge Password
+            Route::put('change-password', [\App\Http\Controllers\AuthController::class, 'changePassword']);
         });
 
         #Payment
         Route::group(['prefix' => 'payment'], function () {
                 Route::post('stripe', [\App\Http\Controllers\PaymentController::class, 'processStripePayment']);
         });
+
+        
 
     });
 });
