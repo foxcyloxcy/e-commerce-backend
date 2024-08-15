@@ -6,6 +6,9 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\Category;
+use App\Models\SubCategory;
+use App\Models\SubCategoryProperty;
+use App\Models\SubCategoryPropertyValue;
 
 class CategorySeeder extends Seeder
 {
@@ -13,7 +16,8 @@ class CategorySeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {
+    {   
+        // truncate all
         Category::truncate();
 
         DB::table('categories')->insert([
