@@ -74,15 +74,11 @@
                         <table>
                             <tbody>
                                 <tr>
-                                <td>
-                                <p> Warm regards,</p>
-                                </td>
-                                </tr>
-                                <tr>
                                     <td>
-                                        <p>Reloved UAE</p>
+                                        <p>Thanks for shopping at the reloved marketplace. </p>
                                     </td>
                                 </tr>
+                                
                             </tbody>
                         </table>
                     </td>
@@ -99,7 +95,7 @@
                                 <tr>
                                     <td>
                                         <div class="footer">
-                                        © 2023 Reloved UAE. All rights reserved
+                                        © 2024 Reloved UAE. All rights reserved
                                         </div>
                                     </td>
                                 </tr>

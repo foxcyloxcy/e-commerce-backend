@@ -46,11 +46,31 @@ class SubCategorySeeder extends Seeder
             ["id" => 15, "category_id" => 3, "name" => "Buggies and Travel", "status" => 1, "created_at" => now(), "updated_at" => now()],
         ]);
 
+        $homeAndFurniture = collect([
+            ["id" => 16, "category_id" => 4, "name" => "Accessories", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 17, "category_id" => 4, "name" => "Bed", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 18, "category_id" => 4, "name" => "Kitchenwear", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 19, "category_id" => 4, "name" => "Outside", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 20, "category_id" => 4, "name" => "Seating", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 21, "category_id" => 4, "name" => "Storage and Wardrobes", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 22, "category_id" => 4, "name" => "Table", "status" => 1, "created_at" => now(), "updated_at" => now()]
+        ]);
+
+        $pets = collect([
+            ["id" => 23, "category_id" => 5, "name" => "Birds", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 24, "category_id" => 5, "name" => "Cats", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 25, "category_id" => 5, "name" => "Dogs", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 26, "category_id" => 5, "name" => "Fish", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 27, "category_id" => 5, "name" => "Tortoise", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 28, "category_id" => 5, "name" => "Others", "status" => 1, "created_at" => now(), "updated_at" => now()],
+        ]);
+
       
 
         $data = $women->merge($men)
-                ->merge($babyAndChildren);
-                // ->merge($furniture);
+                ->merge($babyAndChildren)
+                ->merge($homeAndFurniture)
+                ->merge($pets);
 
         SubCategory::insert($data->toArray());
 

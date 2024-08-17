@@ -20,7 +20,7 @@ class UserVerificationNotification extends Notification
      */
     public function __construct($code)
     {
-        $this->subject = env('APP_NAME') . ' Verification Email';
+        $this->subject = env('APP_NAME') . ' OTP';
         $this->mailBlade = 'mail.content.verification';
         $this->code = $code;
     }
