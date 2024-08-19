@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorBank;
 use App\Models\Item;
+use App\Models\ItemBidding;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\User\UpdateUserDetailsRequest;
 use App\Http\Requests\User\UpdateUserVendorDetailsRequest;
@@ -182,6 +183,19 @@ class MeController extends Controller
         } catch (\Exception $e) {
             //Rollback Changes
             DB::rollback();
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function myOffers(Request $request)
+    {
+        $size = $request->size ?: 10;
+        $data = ItemBidding::with('item')->where('buyer_id', auth()->user()->id)->paginate($size);
+        try {
+            return response(['data' =>  $data], 200);
+
+        } catch (\Exception $e) {
+            #error message
             return response(['message' => $e->getMessage()], 400);
         }
     }
