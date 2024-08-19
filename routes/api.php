@@ -75,6 +75,11 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
 
             #Chagnge Password
             Route::put('change-password', [\App\Http\Controllers\AuthController::class, 'changePassword']);
+
+            #Upload User Photo
+            Route::post('upload-photo', [\App\Http\Controllers\MeController::class, 'uploadUserPhoto']);
+            #Upload Vendor Photo
+            Route::post('upload-vendor', [\App\Http\Controllers\MeController::class, 'uploadVendorPhoto']);
         });
 
         #Payment
