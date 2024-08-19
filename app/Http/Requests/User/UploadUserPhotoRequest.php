@@ -24,7 +24,7 @@ class UploadUserPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => 'required|image|max:10000'
+            'photo' => 'required|image'
         ];
     }
 
