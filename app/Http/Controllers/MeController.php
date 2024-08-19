@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\User\UpdateUserDetailsRequest;
 use App\Http\Requests\User\UpdateUserVendorDetailsRequest;
 use App\Http\Requests\Bank\StoreUserBankRequest;
+use App\Http\Requests\User\UploadUserPhotoRequest;
+use App\Http\Requests\User\UploadVendorPhotoRequest;
+use Illuminate\Support\Facades\Storage;
 
 class MeController extends Controller
 {
@@ -135,6 +138,50 @@ class MeController extends Controller
 
         } catch (\Exception $e) {
             #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function uploadUserPhoto(UploadUserPhotoRequest $request)
+    {
+        #Validate
+        $param = $request->validated();
+        
+        $user = auth()->user();
+
+        DB::beginTransaction();
+        try {
+            $path = Storage::putFile('profiles', $request->file('photo'));
+            // Get the URL
+            $url = Storage::url($path);
+            $user->update(['photo' => $url]);
+            DB::commit();
+            return response(['data' =>  $user, 'message' => 'Successfully Uploaded'], 200);
+        } catch (\Exception $e) {
+            //Rollback Changes
+            DB::rollback();
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function uploadVendorPhoto(UploadVendorPhotoRequest $request)
+    {
+        #Validate
+        $param = $request->validated();
+        
+        $user = auth()->user();
+        
+        DB::beginTransaction();
+        try {
+            $path = Storage::putFile('profiles', $request->file('logo'));
+            // Get the URL
+            $url = Storage::url($path);
+            $user->vendor->update(['logo' => $url]);
+            DB::commit();
+            return response(['data' =>  $user, 'message' => 'Successfully Uploaded'], 200);
+        } catch (\Exception $e) {
+            //Rollback Changes
+            DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
