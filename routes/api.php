@@ -80,6 +80,9 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('upload-photo', [\App\Http\Controllers\MeController::class, 'uploadUserPhoto']);
             #Upload Vendor Photo
             Route::post('upload-vendor', [\App\Http\Controllers\MeController::class, 'uploadVendorPhoto']);
+
+            #My Offer (bidding)
+            Route::get('my-offers', [\App\Http\Controllers\MeController::class, 'myOffers']);
         });
 
         #Payment

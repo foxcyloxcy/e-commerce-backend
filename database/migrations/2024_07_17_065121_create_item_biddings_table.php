@@ -18,7 +18,7 @@ return new class extends Migration
             $table->bigInteger('buyer_id');
             $table->decimal('asking_price', 12, 2);
             $table->text('remarks')->nullable();
-            $table->smallInteger('is_accepted')->default(0); // 0 = NO, 1 = YES
+            $table->smallInteger('is_accepted')->default(0); // 0 = Pending, 1 = Accepted, 2 = Reject 
             $table->smallInteger('status')->default(1); // 0 = Inactive, 1 = Active
             $table->timestamps();
         });

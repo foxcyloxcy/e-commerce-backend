@@ -11,14 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Item extends Model
 {
     use HasFactory;
-    // 0 = pending/for approval, 1 = published, 2 = rejected, 3 = purchased, 4 = accepted bid(show only on seller) , 5 = archive or deleted
+    
     // Statuses
     const STATUS_PENDING = 0;
     const STATUS_PUBLISHED = 1;
     const STATUS_REJECTED = 2;
     const STATUS_SOLD = 3;
     const STATUS_BID_ACCEPTED = 4;
-    const STATUS_ARCHIVED = 4;
+    const STATUS_ARCHIVED = 5;
 
 
     const STATUSES = [self::STATUS_PENDING => 'Pending', self::STATUS_PUBLISHED => 'Published', self::STATUS_REJECTED => 'Rejected', self::STATUS_SOLD => 'Sold', self::STATUS_BID_ACCEPTED => 'Bid Accepted', self::STATUS_ARCHIVED => 'Archived'];
@@ -56,7 +56,8 @@ class Item extends Model
      */
     protected $appends = [
         'default_image',
-        'status_name'
+        'status_name',
+        'has_offer'
     ];
 
     /**
@@ -95,6 +96,21 @@ class Item extends Model
     {
         return (isset(self::STATUSES[$this->status])) ? self::STATUSES[$this->status] : '';
     }
+
+     // Get If Has Offer in  Bidding
+     public function getHasOfferAttribute(): string|null
+     {
+        if(auth('auth-api')->check()){
+            $hasOffer = $this->ItemBidding->where('buyer_id', auth('auth-api')->user()->id)->whereIn('is_accepted', [0,2])->first();
+            if(!empty($hasOffer)){
+                return 'Yes';
+            }else{
+                return 'No';
+            }
+        }else{
+            return 'No';
+        }
+     }
 
     /**
      * Relationships
