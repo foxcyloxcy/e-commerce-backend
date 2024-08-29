@@ -58,7 +58,9 @@ class Item extends Model
     protected $appends = [
         'default_image',
         'status_name',
-        'has_offer'
+        'has_offer',
+        'total_fee',
+        'total_fee_breakdown'
     ];
 
     /**
@@ -112,6 +114,27 @@ class Item extends Model
             return 'No';
         }
      }
+
+    // service charge
+    public function getTotalFeeAttribute(): string
+    {
+        $system_charge = ServiceCharge::where('status', 1)->first();
+        $protection_fee = ($this->price * $system_charge->system_fee) / 100;
+        return $this->price + $protection_fee;
+        
+    }
+
+    public function getTotalFeeBreakDownAttribute(): array
+    {
+        $system_charge = ServiceCharge::where('status', 1)->first();
+        $protection_fee = ($this->price * $system_charge->system_fee) / 100;
+        return [
+            'item' => $this->price,
+            'buyer_protection_fee' => $protection_fee,
+            'total' => $this->price + $protection_fee
+        ];
+        
+    }
 
     /**
      * Relationships
