@@ -28,7 +28,8 @@ class StoreItemRequest extends FormRequest
             'item_description' => 'nullable|string',
             'sub_category_id' => 'required|int',
             'price' => 'required|numeric',
-            'is_bid' => 'required|int'
+            'is_bid' => 'required|int',
+            'address' => 'nullable|string'
         ];
     }
 
