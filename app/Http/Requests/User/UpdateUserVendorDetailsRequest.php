@@ -24,8 +24,8 @@ class UpdateUserVendorDetailsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string',
-            'address' => 'required|string',
+            'name' => 'sometimes|required|string',
+            'address' => 'sometimes|required|string',
         ];
     }
 
