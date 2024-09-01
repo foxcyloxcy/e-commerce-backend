@@ -22,7 +22,8 @@ class ItemResource extends JsonResource
             'is_bid' => $this->is_bid,
             'price' => $this->price,
             'total_fee' =>  $this->total_fee,
-            'total_fee_breakdown' =>  $this->total_fee_breakdown
+            'total_fee_breakdown' =>  $this->total_fee_breakdown,
+            'user' => $this->user
         ];
     }
 }

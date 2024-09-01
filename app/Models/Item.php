@@ -130,7 +130,8 @@ class Item extends Model
         $protection_fee = ($this->price * $system_charge->system_fee) / 100;
         return [
             'item' => $this->price,
-            'buyer_protection_fee' => $protection_fee,
+            'platform_fee' => $protection_fee,
+            'platform_fee_percentage' => number_format($system_charge->system_fee).'%',
             'total' => $this->price + $protection_fee
         ];
         
