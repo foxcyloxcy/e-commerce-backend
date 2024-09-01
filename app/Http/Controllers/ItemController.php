@@ -143,7 +143,7 @@ class ItemController extends Controller
         $size = $request->size ?: 10;
 
         try {
-            $data = Item::with('subCategory')->where('status', Item::STATUS_PUBLISHED)->where('is_featured', 1)
+            $data = Item::with('subCategory','user')->where('status', Item::STATUS_PUBLISHED)->where('is_featured', 1)
             ->orderBy('item_name', 'asc')
             ->paginate($size);
 
