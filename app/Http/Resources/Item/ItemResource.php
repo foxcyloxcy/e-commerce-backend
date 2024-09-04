@@ -23,7 +23,8 @@ class ItemResource extends JsonResource
             'price' => $this->price,
             'total_fee' =>  $this->total_fee,
             'total_fee_breakdown' =>  $this->total_fee_breakdown,
-            'user' => $this->user
+            'user' => $this->user,
+            'category' => $this->subCategory->category
         ];
     }
 }
