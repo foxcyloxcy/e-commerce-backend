@@ -60,7 +60,8 @@ class Item extends Model
         'status_name',
         'has_offer',
         'total_fee',
-        'total_fee_breakdown'
+        'total_fee_breakdown',
+        'category'
     ];
 
     /**
@@ -135,6 +136,12 @@ class Item extends Model
             'total' => $this->price + $protection_fee
         ];
         
+    }
+
+    // Category
+    public function getCategoryAttribute()
+    {
+        return $this->subCategory->category;
     }
 
     /**
