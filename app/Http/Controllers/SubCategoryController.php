@@ -39,9 +39,11 @@ class SubCategoryController extends Controller
     {
 
         try {
-            $data = SubCategoryProperty::with('subCategoryPropertyValue')
-                ->where('sub_category_id', $request->sub_category_id)
-                ->get();
+            $data = SubCategory::with('subCategoryProperty', 'subCategoryProperty.subCategoryPropertyValue')
+                ->whereHas('subCategoryProperty', function ($q) use ($request) {
+                    $q->where('sub_category_id', $request->sub_category_id);
+                })
+                ->get();    
 
             return response(['data' =>  $data], 200);
 
