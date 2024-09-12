@@ -121,7 +121,8 @@ class Item extends Model
     {
         $system_charge = ServiceCharge::where('status', 1)->first();
         $protection_fee = ($this->price * $system_charge->system_fee) / 100;
-        return $this->price + $protection_fee;
+        $fee = $this->price + $protection_fee;
+        return number_format($fee, 2);
         
     }
 
@@ -131,8 +132,9 @@ class Item extends Model
         $protection_fee = ($this->price * $system_charge->system_fee) / 100;
         return [
             'item' => $this->price,
-            'platform_fee' => $protection_fee,
+            'platform_fee' => number_format($protection_fee,2),
             'platform_fee_percentage' => number_format($system_charge->system_fee).'%',
+            'platform_fee_percentage_value' => number_format($system_charge->system_fee),
             'total' => $this->price + $protection_fee
         ];
         

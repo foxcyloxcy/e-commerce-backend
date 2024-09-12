@@ -85,9 +85,18 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::get('my-offers', [\App\Http\Controllers\MeController::class, 'myOffers']);
         });
 
-        #Payment
+        #Payment Stripe
         Route::group(['prefix' => 'payment'], function () {
-                Route::post('stripe', [\App\Http\Controllers\PaymentController::class, 'processStripePayment']);
+            //accounts
+            Route::post('stripe/account', [\App\Http\Controllers\PaymentController::class, 'createStripeAccount']);
+
+            //checkout
+            Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
+            Route::get('stripe/checkout/session/{sessionId}', [\App\Http\Controllers\PaymentController::class, 'getTransactionViaSession']);
+
+            //transaction
+            Route::post('stripe/checkout/transaction', [\App\Http\Controllers\PaymentController::class, 'saveTransaction']);
+            
         });
 
         

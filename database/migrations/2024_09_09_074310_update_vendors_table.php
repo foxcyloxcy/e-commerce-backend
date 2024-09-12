@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->bigInteger('vendor_bank_id')->nullable()->after('seller_id');
+        Schema::table('vendors', function (Blueprint $table) {
+            $table->string('stripe_id')->nullable()->after('user_id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->dropColumn('vendor_bank_id');
+        Schema::table('vendors', function (Blueprint $table) {
+            $table->dropColumn('stripe_id');
         });
     }
 };
