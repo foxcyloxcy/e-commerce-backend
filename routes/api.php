@@ -81,8 +81,9 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             #Upload Vendor Photo
             Route::post('upload-vendor', [\App\Http\Controllers\MeController::class, 'uploadVendorPhoto']);
 
-            #My Offer (bidding)
+            #Offers (bidding)
             Route::get('my-offers', [\App\Http\Controllers\MeController::class, 'myOffers']);
+            Route::get('offers-to-me', [\App\Http\Controllers\MeController::class, 'offersToMe']);
         });
 
         #Payment Stripe

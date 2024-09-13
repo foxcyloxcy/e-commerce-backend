@@ -160,8 +160,8 @@ class PaymentController extends Controller
 
             $transaction = Transaction::create([
                 'transaction_number' => $transactionNumber,
-                'user_id' => $request->user_id,
-                'seller_id' => $request->seller_id,
+                'user_id' => auth()->user()->id,
+                'seller_id' => $item->user->id,
                 'items_quantity' => 1,
                 'service_fee_percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
                 'service_fee_amount' => $item->total_fee_breakdown['platform_fee'],

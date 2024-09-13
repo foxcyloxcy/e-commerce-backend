@@ -61,7 +61,8 @@ class Item extends Model
         'has_offer',
         'total_fee',
         'total_fee_breakdown',
-        'category'
+        'category',
+        'offers'
     ];
 
     /**
@@ -144,6 +145,11 @@ class Item extends Model
     public function getCategoryAttribute()
     {
         return $this->subCategory->category;
+    }
+
+    // bidding count
+    public function getOffersAttribute(){
+        return $this->itemBidding->count();
     }
 
     /**
