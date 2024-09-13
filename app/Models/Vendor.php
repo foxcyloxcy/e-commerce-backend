@@ -22,7 +22,8 @@ class Vendor extends Model
         'name',
         'address',
         'status',
-        'logo'
+        'logo',
+        'stripe_id'
     ];
 
     /**

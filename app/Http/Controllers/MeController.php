@@ -190,7 +190,32 @@ class MeController extends Controller
     protected function myOffers(Request $request)
     {
         $size = $request->size ?: 10;
-        $data = ItemBidding::with('item')->where('buyer_id', auth()->user()->id)->paginate($size);
+        
+        $data = Item::where('is_bid', 1)
+            ->where('status', Item::STATUS_PUBLISHED)
+            ->whereHas('itemBidding', function ($q) use ($request) {
+                $q->where('buyer_id', auth()->user()->id);
+            })->paginate($size);
+            
+        try {
+            return response(['data' =>  $data], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function offersToMe(Request $request)
+    {
+        $size = $request->size ?: 10;
+
+        $data = Item::where('is_bid', 1)
+            ->where('status', Item::STATUS_PUBLISHED)
+            ->whereHas('itemBidding', function ($q) use ($request) {
+                $q->where('seller_id', auth()->user()->id);
+            })->paginate($size);
+            
         try {
             return response(['data' =>  $data], 200);
 
