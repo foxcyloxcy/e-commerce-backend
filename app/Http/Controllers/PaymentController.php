@@ -59,8 +59,8 @@ class PaymentController extends Controller
    
         $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initiailize
         try {
-            $total = bcmul($item->total_fee_breakdown['total'], 100);
-            $fees = bcmul($item->total_fee_breakdown['platform_fee'], 100);
+            $total = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['total']) * 100);
+            $fees = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['platform_fee']) * 100);
             $stripe_id = $item->user->vendor->stripe_id;
             $check = $stripeClient->checkout->sessions->create([
                 'line_items' => [
@@ -175,6 +175,9 @@ class PaymentController extends Controller
                 'transaction_id' => $transaction->id,
                 'item_id' => $item->id,
             ]);
+
+            $item->status = Item::STATUS_SOLD;
+            $item->update();
 
             return response([
                 'data' => $transaction,
