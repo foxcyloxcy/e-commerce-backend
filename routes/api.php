@@ -93,7 +93,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
 
             //checkout
             Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
-            Route::get('stripe/checkout/session/{sessionId}', [\App\Http\Controllers\PaymentController::class, 'getTransactionViaSession']);
+            // Route::get('stripe/checkout/session/{sessionId}', [\App\Http\Controllers\PaymentController::class, 'getTransactionViaSession']);
 
             //transaction
             Route::post('stripe/checkout/transaction', [\App\Http\Controllers\PaymentController::class, 'saveTransaction']);
