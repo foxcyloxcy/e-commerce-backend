@@ -78,7 +78,7 @@ class PaymentController extends Controller
                     'transfer_data' => ['destination' => $stripe_id],
                 ],
                 'mode' => 'payment',
-                'success_url' => 'https://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}&item='.$item->uuid.'',
+                'success_url' => 'http://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}&item='.$item->uuid.'',
             ]);
             
             return response([
