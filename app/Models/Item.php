@@ -103,7 +103,7 @@ class Item extends Model
     }
 
      // Get If Has Offer in  Bidding
-     public function getHasOfferAttribute(): string|null
+     public function getHasOfferAttribute(): string
      {
         if(auth('auth-api')->check()){
             $hasOffer = $this->ItemBidding->where('buyer_id', auth('auth-api')->user()->id)->whereIn('is_accepted', [0,2])->first();
