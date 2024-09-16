@@ -33,8 +33,8 @@ class PaymentController extends Controller
 
             $link = $stripeClient->accountLinks->create([
                 'account' => $account->id,
-                'refresh_url' => 'https://example.com/reauth',
-                'return_url' => 'https://example.com/return',
+                'refresh_url' => 'http://localhost:5173/my-profile',
+                'return_url' => 'http://localhost:5173/my-profile',
                 'type' => 'account_onboarding',
             ]);
             $user->vendor->stripe_id = $account->id;
