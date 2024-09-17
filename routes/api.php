@@ -49,7 +49,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::patch('{bid}', [\App\Http\Controllers\ItemBiddingController::class, 'status']);
         });
 
-        #Bidding
+        #Comment
         Route::group(['prefix' => 'item-comment'], function () {
             Route::get('', [\App\Http\Controllers\ItemCommentController::class, 'index']);
             Route::post('', [\App\Http\Controllers\ItemCommentController::class, 'store']);

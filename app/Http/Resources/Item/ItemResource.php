@@ -24,7 +24,8 @@ class ItemResource extends JsonResource
             'total_fee' =>  $this->total_fee,
             'total_fee_breakdown' =>  $this->total_fee_breakdown,
             'user' => $this->user,
-            'category' => $this->subCategory->category
+            'category' => $this->subCategory->category,
+            'my_offer' => (auth('auth-api')->check()) ? $this->itemBidding->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first() : ''
         ];
     }
 }

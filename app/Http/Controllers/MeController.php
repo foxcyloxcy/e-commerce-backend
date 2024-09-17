@@ -16,6 +16,9 @@ use App\Http\Requests\Bank\StoreUserBankRequest;
 use App\Http\Requests\User\UploadUserPhotoRequest;
 use App\Http\Requests\User\UploadVendorPhotoRequest;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Resources\Me\MyOfferResource;
+use App\Http\Resources\Me\MyOfferCollection;
+use Illuminate\Support\Arr;
 
 class MeController extends Controller
 {
@@ -191,14 +194,17 @@ class MeController extends Controller
     {
         $size = $request->size ?: 10;
         
-        $data = Item::where('is_bid', 1)
-            ->where('status', Item::STATUS_PUBLISHED)
+        $data = Item::with('user')->where('is_bid', 1)
+            ->whereIn('status', [Item::STATUS_PUBLISHED, Item::STATUS_BID_ACCEPTED])
             ->whereHas('itemBidding', function ($q) use ($request) {
                 $q->where('buyer_id', auth()->user()->id);
             })->paginate($size);
+
+        $pagination = $data->toArray();
+        $pagination = $request->page != 'all' ? Arr::except($pagination, ['data']) : null;      
             
         try {
-            return response(['data' =>  $data], 200);
+            return response(['data' => new MyOfferCollection($data), 'pagination' => $pagination ], 200);
 
         } catch (\Exception $e) {
             #error message
