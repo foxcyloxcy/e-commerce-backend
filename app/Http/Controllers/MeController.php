@@ -197,7 +197,7 @@ class MeController extends Controller
         $data = Item::with('user')->where('is_bid', 1)
             ->whereIn('status', [Item::STATUS_PUBLISHED, Item::STATUS_BID_ACCEPTED])
             ->whereHas('itemBidding', function ($q) use ($request) {
-                $q->where('buyer_id', auth()->user()->id);
+                $q->where('buyer_id', auth('auth-api')->user()->id);
             })->paginate($size);
 
         $pagination = $data->toArray();
@@ -215,17 +215,67 @@ class MeController extends Controller
     protected function offersToMe(Request $request)
     {
         $size = $request->size ?: 10;
-
-        $data = Item::where('is_bid', 1)
+        try {
+            $data = Item::where('is_bid', 1)
             ->where('status', Item::STATUS_PUBLISHED)
             ->whereHas('itemBidding', function ($q) use ($request) {
-                $q->where('seller_id', auth()->user()->id);
+                $q->where('seller_id', auth('auth-api')->user()->id)
+                    ->where('is_accepted', 0);
             })->paginate($size);
             
-        try {
-            return response(['data' =>  $data], 200);
+            $pagination = $data->toArray();
+            $pagination = $request->page != 'all' ? Arr::except($pagination, ['data']) : null;   
+            return response(['data' => new MyOfferCollection($data), 'pagination' => $pagination ], 200);
 
         } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function offersToMeByUuid(Item $item)
+    {
+        try {
+            $offers = ItemBidding::with('buyer')->where('seller_id', auth('auth-api')->user()->id)
+            ->where('item_id', $item->id)
+            ->where('is_accepted', 0)->get();    
+            return response(['data' => $item, 'offers' => $offers], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function acceptOffer(ItemBidding $bid)
+    {
+        DB::beginTransaction();
+        try {
+            // return $bid;
+            $bid->update(['is_accepted' => 1]);
+            $bid->item->update(['status' => 4]);
+
+            DB::commit();
+            return response(['data' =>  $bid, 'message' => 'Successfully Accept Offer.'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function rejectOffer(ItemBidding $bid)
+    {
+        DB::beginTransaction();
+        try {
+            $bid->update(['is_accepted' => 2]);
+
+            DB::commit();
+            return response(['data' =>  $bid, 'message' => 'Successfully Reject Offer.'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
             #error message
             return response(['message' => $e->getMessage()], 400);
         }

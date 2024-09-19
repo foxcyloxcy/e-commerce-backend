@@ -7,6 +7,7 @@ use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Charge;
 use App\Models\Item;
+use App\Models\ItemBidding;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Http\Requests\Payment\StripeAccountRequest;
@@ -59,6 +60,13 @@ class PaymentController extends Controller
    
         $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initiailize
         try {
+            
+            if($item->status == Item::STATUS_BID_ACCEPTED){
+                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->first();
+                $asking_price = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $offer->asking_price) * 100);
+                $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                $total = $asking_price + $fees;
+            }
             $total = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['total']) * 100);
             $fees = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['platform_fee']) * 100);
             $stripe_id = $item->user->vendor->stripe_id;

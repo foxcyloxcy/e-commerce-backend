@@ -71,6 +71,11 @@ class ItemBidding extends Model
         return $this->belongsTo(User::class, 'buyer_id');
     }
 
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
     // public function items(): HasMany
     // {
     //     return $this->hasMany(ItemProperty::class, 'item_id');
