@@ -62,7 +62,8 @@ class Item extends Model
         'total_fee',
         'total_fee_breakdown',
         'category',
-        'offers'
+        'offers',
+        'offers_to_me'
     ];
 
     /**
@@ -148,8 +149,21 @@ class Item extends Model
     }
 
     // bidding count
-    public function getOffersAttribute(){
+    public function getOffersAttribute()
+    {
         return $this->itemBidding->count();
+ 
+    }
+
+     // bidding count (offers to me - seller id auth)
+     public function getOffersToMeAttribute()
+     {
+        if(auth('auth-api')->check()){
+            return $this->itemBidding->where('seller_id', auth('auth-api')->user()->id)->count();
+        }else{
+            return null;
+        }
+        
     }
 
     /**
