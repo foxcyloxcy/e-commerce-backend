@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Resources\Item\ItemResource;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ItemImage;
+use App\Models\ItemComment;
 
 class ItemController extends Controller
 {
@@ -128,7 +129,9 @@ class ItemController extends Controller
                 ];
             });
 
-            return response(['item_details' => new ItemResource($item), 'item_property_details' => $data], 200);
+            $comments = ItemComment::with('user')->where('item_id', $item->id)->get();
+
+            return response(['item_details' => new ItemResource($item), 'item_property_details' => $data, 'item_comments' => $comments], 200);
 
         } catch (\Exception $e) {
             #error message
