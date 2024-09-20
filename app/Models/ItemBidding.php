@@ -63,7 +63,7 @@ class ItemBidding extends Model
 
     public function item(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'id');
+        return $this->belongsTo(Item::class, 'item_id');
     }
 
     public function buyer(): BelongsTo
@@ -76,13 +76,4 @@ class ItemBidding extends Model
         return $this->belongsTo(User::class, 'seller_id');
     }
 
-    // public function items(): HasMany
-    // {
-    //     return $this->hasMany(ItemProperty::class, 'item_id');
-    // }
-
-    // public function item(): BelongsTo
-    // {
-    //     return $this->belongsTo(Item::class, 'id');
-    // }
 }
