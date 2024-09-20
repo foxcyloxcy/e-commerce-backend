@@ -236,10 +236,10 @@ class MeController extends Controller
     protected function offersToMeByUuid(Item $item)
     {
         try {
-            $offers = ItemBidding::with('buyer')->where('seller_id', auth('auth-api')->user()->id)
+            $offers = ItemBidding::with('buyer','item')->where('seller_id', auth('auth-api')->user()->id)
             ->where('item_id', $item->id)
             ->where('is_accepted', 0)->get();    
-            return response(['data' => $item, 'offers' => $offers], 200);
+            return response(['offers' => $offers], 200);
 
         } catch (\Exception $e) {
             #error message
