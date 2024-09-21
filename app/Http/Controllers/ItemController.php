@@ -31,6 +31,9 @@ class ItemController extends Controller
 
         try {
             $data = Item::with('user')->where('status', Item::STATUS_PUBLISHED)
+            ->when(auth('auth-api')->check(), function ($q) use ($request) {
+                $q->where('user_id', "!=", auth('auth-api')->user()->id);
+            })
             ->when(!empty($request->sub_category_id), function ($q) use ($request) {
                 $q->where('sub_category_id', $request->sub_category_id);
             })
@@ -156,5 +159,26 @@ class ItemController extends Controller
             #error message
             return response(['message' => $e->getMessage()], 400);
         }
+    }
+
+    /**
+     * Delete items by uuid
+     *
+     * @param  mixed $item
+     * @return void
+     */
+    protected function delete(Item $item)
+    {
+        try {
+
+            $item->delete();
+
+            return response(['data' => $item, 'message' => "Successfully Deleted"], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+
     }
 }

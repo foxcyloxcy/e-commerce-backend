@@ -29,6 +29,8 @@ Route::group(['prefix' => 'notification'], function () {
 Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
 Route::post('sign-up', [\App\Http\Controllers\AuthController::class, 'signUp']);
 Route::post('verify', [\App\Http\Controllers\AuthController::class, 'verifyUser']);
+Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgotPassword']);
+Route::post('set-forgot-password', [\App\Http\Controllers\AuthController::class, 'setNewPassword']);
 
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
@@ -40,6 +42,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::get('', [\App\Http\Controllers\ItemController::class, 'index']);
             Route::post('', [\App\Http\Controllers\ItemController::class, 'store']);
             Route::get('{item}', [\App\Http\Controllers\ItemController::class, 'show']);
+            Route::delete('{item}', [\App\Http\Controllers\ItemController::class, 'delete']);
         });
 
         #Bidding
