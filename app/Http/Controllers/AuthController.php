@@ -8,6 +8,8 @@ use App\Http\Requests\User\LoginRequest;
 use App\Http\Requests\User\RegistrationRequest;
 use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Requests\User\ChangePasswordRequest;
+use App\Http\Requests\User\ForgotPasswordRequest;
+use App\Http\Requests\User\SetNewPasswordRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
@@ -159,7 +161,12 @@ class AuthController extends Controller
 
                 DB::commit();
 
-                return response(['message' => 'Verification Successful', 'data' => ['access_token' => $tokenResult->accessToken, 'user' => $user]], 200);
+                $type = "";
+                if($request->type == 'forgot password'){
+                    $type= "forgot password";
+                }
+
+                return response(['message' => 'Verification Successful', 'data' => ['access_token' => $tokenResult->accessToken, 'user' => $user], 'type' => $type], 200);
 
             }
         } catch (\Exception $e) {
@@ -201,6 +208,79 @@ class AuthController extends Controller
             }
  
             return response(['message' =>  ['current_password' => ['Invalid password.']]], 401);
+         } catch (\Exception $e) {
+             //Rollback Changes
+             DB::rollback();
+ 
+             return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Forgot Password
+     *
+     * @param  mixed $request
+     * @param  mixed $user
+     * @return void
+     */
+    public function forgotPassword(ForgotPasswordRequest $request)
+    {
+         #Validate
+         $form = $request->validated();
+
+         DB::beginTransaction();
+ 
+         try {
+            $user = User::where('email', $form['email'])->first();
+
+            //add verification code to user
+            $code = rand(100000, 999999); // 6 digits
+            VerificationCode::create([
+                'user_id' => $user->id,
+                'code' => $code,
+                'expired_at' => Carbon::now()->addMinutes(5),
+            ]);
+
+            DB::commit();
+
+            // notify user            
+            $user->notify(new UserVerificationNotification($code));
+            
+            return response(['message' =>  "OTP has been already Sent"], 200);
+         } catch (\Exception $e) {
+             //Rollback Changes
+             DB::rollback();
+ 
+             return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Set New Password
+     *
+     * @param  mixed $request
+     * @param  mixed $user
+     * @return void
+     */
+    public function setNewPassword(SetNewPasswordRequest $request)
+    {
+         #Validate
+         $form = $request->validated();
+
+         DB::beginTransaction();
+ 
+         try {
+            $user = User::where('uuid', $form['uuid'])->first();
+
+            // check if password is same with current password
+            if ($user) {
+                $user->password = Hash::make($form['password']);
+                $user->update();
+                DB::commit();
+                return response(['data' =>  $user, 'message' => 'Password was successfully changed.'], 200);
+            }
+
+            return response(['message' =>  "Something went wrong!"], 400);
          } catch (\Exception $e) {
              //Rollback Changes
              DB::rollback();
