@@ -20,9 +20,10 @@ class Item extends Model
     const STATUS_SOLD = 3;
     const STATUS_BID_ACCEPTED = 4;
     const STATUS_ARCHIVED = 5;
+    const STATUS_PROCESSING_PAYMENT = 6;
 
 
-    const STATUSES = [self::STATUS_PENDING => 'Pending', self::STATUS_PUBLISHED => 'Published', self::STATUS_REJECTED => 'Rejected', self::STATUS_SOLD => 'Sold', self::STATUS_BID_ACCEPTED => 'Bid Accepted', self::STATUS_ARCHIVED => 'Archived'];
+    const STATUSES = [self::STATUS_PENDING => 'Pending', self::STATUS_PUBLISHED => 'Published', self::STATUS_REJECTED => 'Rejected', self::STATUS_SOLD => 'Sold', self::STATUS_BID_ACCEPTED => 'Bid Accepted', self::STATUS_ARCHIVED => 'Archived', self::STATUS_PROCESSING_PAYMENT => 'Processing Payment'];
 
 
     /**

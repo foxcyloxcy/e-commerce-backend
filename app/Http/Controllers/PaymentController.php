@@ -10,6 +10,7 @@ use App\Models\Item;
 use App\Models\ItemBidding;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\TempTransaction;
 use App\Http\Requests\Payment\StripeAccountRequest;
 
 class PaymentController extends Controller
@@ -22,7 +23,7 @@ class PaymentController extends Controller
         $stripeClient = new StripeClient(env('STRIPE_SECRET'));
 
         try {
-            $user = auth()->user();
+            $user = auth('auth-api')->user();
 
             // Create a Standard connected account
             $account = $stripeClient->accounts->create([
@@ -59,6 +60,7 @@ class PaymentController extends Controller
     {
    
         $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initiailize
+        $user = auth('auth-api')->user();
         try {
             
             if($item->status == Item::STATUS_BID_ACCEPTED){
@@ -76,7 +78,7 @@ class PaymentController extends Controller
                         'price_data' => [
                             'currency' => 'aed',
                             'product_data' => ['name' => $item->item_name],
-                            'unit_amount' => $total,
+                            'unit_amount' => $total
                         ],
                         'quantity' => 1, // static for now
                     ],
@@ -87,8 +89,41 @@ class PaymentController extends Controller
                 ],
                 'mode' => 'payment',
                 'success_url' => 'http://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}&item='.$item->uuid.'',
+                'metadata' => [ // custom data
+                    'uuid' =>  $item->uuid,
+                    'user_id' => $user->id, // buyer
+                    'percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
+                    'service_fee' => $fees,
+                    'sub_total' => $total,
+                    'total_amount' => $total
+                ],
             ]);
-            
+            // // The session ID is now in $session->id
+            // $sessionId = $check->id;
+            // $paymentId = $check->payment_intent;
+            // // return $paymentId;
+            // $data = $stripeClient->checkout->sessions->update(
+            //     $sessionId,
+            //     [
+            //         'metadata' => [
+            //             'uuid' => $item->uuid,
+            //             'session' => $paymentId, // Store the session ID here
+            //         ],
+            //     ]
+            // );
+
+            // // ]);
+            // create temporary
+            TempTransaction::create([
+                'session_ref' => $check->id,
+                'status' => $check->status
+            ]);
+            // return $data;
+
+            $item->update([
+                'status' => Item::STATUS_PROCESSING_PAYMENT
+            ]);
+
             return response([
                 'stripe_url' => $check->url,
                 'message' => 'Stripe URL Successfully generated.', // for indication only
@@ -117,7 +152,7 @@ class PaymentController extends Controller
             // );
 
             // $data = $stripeClient->paymentIntents->retrieve(
-            //     'pi_3Px2PUKg4tFvmg1f12D3xndC',
+            //     'pi_3Q4In3Kg4tFvmg1f1TUd0tHF',
             //     []
             // );
 
