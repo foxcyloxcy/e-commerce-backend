@@ -32,6 +32,9 @@ Route::post('verify', [\App\Http\Controllers\AuthController::class, 'verifyUser'
 Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgotPassword']);
 Route::post('set-forgot-password', [\App\Http\Controllers\AuthController::class, 'setNewPassword']);
 
+// WebHook
+Route::post('webhook/stripe', [\App\Http\Controllers\WebHookController::class, 'handle']);
+
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
 
