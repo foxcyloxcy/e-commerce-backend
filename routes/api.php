@@ -46,6 +46,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('', [\App\Http\Controllers\ItemController::class, 'store']);
             Route::get('{item}', [\App\Http\Controllers\ItemController::class, 'show']);
             Route::delete('{item}', [\App\Http\Controllers\ItemController::class, 'delete']);
+            Route::put('{item}', [\App\Http\Controllers\ItemController::class, 'update']);
         });
 
         #Bidding

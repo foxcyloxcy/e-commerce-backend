@@ -50,6 +50,7 @@ class ItemBidding extends Model
      */
     protected $appends = [
         'bid_status_name',
+        'total_fee_breakdown'
     ];
 
     /**
@@ -59,6 +60,20 @@ class ItemBidding extends Model
     public function getBidStatusNameAttribute(): string
     {
         return (isset(self::BID_STATUSES[$this->is_accepted])) ? self::BID_STATUSES[$this->is_accepted] : '';
+    }
+
+    public function getTotalFeeBreakDownAttribute(): array
+    {
+        $system_charge = ServiceCharge::where('status', 1)->first();
+        $protection_fee = ($this->asking_price * $system_charge->system_fee) / 100;
+        return [
+            'item' => $this->asking_price,
+            'platform_fee' => number_format($protection_fee,2),
+            'platform_fee_percentage' => number_format($system_charge->system_fee).'%',
+            'platform_fee_percentage_value' => number_format($system_charge->system_fee),
+            'total' => $this->asking_price + $protection_fee
+        ];
+        
     }
 
     public function item(): BelongsTo

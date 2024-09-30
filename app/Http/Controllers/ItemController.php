@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Item\StoreItemRequest;
+use App\Http\Requests\Item\UpdateItemRequest;
 use App\Models\Item;
 use App\Models\ItemProperty;
 use App\Models\SubCategoryProperty;
@@ -177,6 +178,31 @@ class ItemController extends Controller
 
         } catch (\Exception $e) {
             #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+
+    }
+
+     /**
+     * Update item by uuid
+     *
+     * @param  mixed $item
+     * @return void
+     */
+    protected function update(UpdateItemRequest $request, Item $item)
+    {
+        #Validate
+        $param = $request->validated();
+        DB::beginTransaction();
+        try {
+            $item->update($param);
+
+            DB::commit();
+
+            return response(['data' =>  $item, 'message' => 'Item Successfully updated.'], 200);
+        } catch (\Exception $e) {
+            //Rollback Changes
+            DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
 
