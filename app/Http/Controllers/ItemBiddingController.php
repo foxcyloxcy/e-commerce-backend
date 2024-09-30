@@ -55,7 +55,7 @@ class ItemBiddingController extends Controller
 
             return response([
                 'data' => $bid,
-                'message' => 'Successfully Bid! We well notify you if the offer has been accpeted or declined .',
+                'message' => 'Your offer has been received, we will notify you via email on the outcome once the seller has reviewed.',
             ]);
         } catch (\Exception $e) {
 
