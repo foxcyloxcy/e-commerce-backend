@@ -58,7 +58,8 @@ class User extends Authenticatable
      * Append Attribute
      */
     protected $appends = [
-        'is_vendor'
+        'is_vendor',
+        'has_bank_details'
     ];
 
     /**
@@ -93,6 +94,12 @@ class User extends Authenticatable
         return $this->vendor ? 'Yes': 'No';
     }
 
+    // Check if has bank details
+    public function getHasBankDetailsAttribute()
+    {
+        return $this->vendorBank ? 'Yes': 'No';
+    }
+
     /**
      * Relationships
      */
@@ -104,6 +111,12 @@ class User extends Authenticatable
     public function items(): HasMany
     {
         return $this->hasMany(Item::class);
+    }
+
+
+    public function vendorBank(): HasOne
+    {
+        return $this->HasOne(VendorBank::class);
     }
 
 }

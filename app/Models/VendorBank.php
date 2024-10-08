@@ -40,4 +40,9 @@ class VendorBank extends Model
         return $this->belongsTo(Bank::class, 'bank_id');
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
 }
