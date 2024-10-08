@@ -49,6 +49,11 @@ class MeController extends Controller
         DB::beginTransaction();
         try {
             $user->update($param);
+
+            if($user->vendor){
+                $user->vendor->update($param);
+            }
+
             DB::commit();
             return response(['data' =>  $user, 'message' => 'Successfully updated'], 200);
         } catch (\Exception $e) {
@@ -119,14 +124,26 @@ class MeController extends Controller
 
         DB::beginTransaction();
         try {
-            $bank = VendorBank::create([
-                'user_id' => $request->user_id,
-                'bank_id' => $request->bank_id,
-                'account_fullname' => $request->account_fullname,
-                'account_number' => $request->account_number,
-            ]);
+            //check if has user bank
+            $check = VendorBank::where('user_id', auth('auth-api')->user()->id)->first();
+
+            if($check){
+                $check->update([
+                    'bank_id' => $request->bank_id,
+                    'account_fullname' => $request->account_fullname,
+                    'account_number' => $request->account_number
+                ]);
+            }else{
+                $check = VendorBank::create([
+                    'user_id' => auth('auth-api')->user()->id,
+                    'bank_id' => $request->bank_id,
+                    'account_fullname' => $request->account_fullname,
+                    'account_number' => $request->account_number
+                ]);
+            }
+            
             DB::commit();
-            return response(['data' =>  $bank, 'message' => 'Successfully Added.'], 200);
+            return response(['data' =>  $check, 'message' => 'Successfully Added.'], 200);
         } catch (\Exception $e) {
             //Rollback Changes
             DB::rollback();

@@ -24,7 +24,6 @@ class StoreUserBankRequest extends FormRequest
     public function rules()
     {
         return [
-            'user_id' => 'required|int',
             'bank_id' => 'required|int',
             'account_fullname' => 'required|string',
             'account_number' => 'required|string'

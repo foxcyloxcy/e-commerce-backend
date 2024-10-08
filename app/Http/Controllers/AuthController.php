@@ -12,6 +12,7 @@ use App\Http\Requests\User\ForgotPasswordRequest;
 use App\Http\Requests\User\SetNewPasswordRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -92,6 +93,19 @@ class AuthController extends Controller
             $user = User::create($param);
             $user->password = Hash::make($param['password']);
             $user->save();
+
+            $getVendor = Vendor::where('user_id', $user->id)->first();
+
+            if(!empty($getVendor)){
+                $getVendor->update([
+                    'name' => $user->first_name.' '.$user->last_name
+                ]);
+            }else{
+                Vendor::create([
+                    'user_id' => $user->id,
+                    'name' => $user->first_name.' '.$user->last_name
+                ]);
+            }
 
             //add verification code to user
             $code = rand(100000, 999999); // 6 digits
