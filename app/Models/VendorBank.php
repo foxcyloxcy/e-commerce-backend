@@ -19,9 +19,13 @@ class VendorBank extends Model
 
     protected $fillable = [
         'user_id',
-        'bank_id',
+        'account_id',
+        'iban',
+        'bic_code',
         'account_fullname',
         'account_number',
+        'bank_name',
+        'bank_address',
         'status'
     ];
 
@@ -35,10 +39,10 @@ class VendorBank extends Model
         'updated_at' => 'datetime'
     ];
 
-    public function bank(): BelongsTo
-    {
-        return $this->belongsTo(Bank::class, 'bank_id');
-    }
+    // public function bank(): BelongsTo
+    // {
+    //     return $this->belongsTo(Bank::class, 'bank_id');
+    // }
 
     public function user(): BelongsTo
     {

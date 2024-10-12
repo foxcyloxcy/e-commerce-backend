@@ -96,17 +96,19 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::put('offers-to-me/reject/{bid}', [\App\Http\Controllers\MeController::class, 'rejectOffer']);
         });
 
-        #Payment Stripe
+        #Payment Mamopay
         Route::group(['prefix' => 'payment'], function () {
             //accounts
-            Route::post('stripe/account', [\App\Http\Controllers\PaymentController::class, 'createStripeAccount']);
+            Route::post('mamopay/account', [\App\Http\Controllers\PaymentController::class, 'createMamoPayAccount']);
 
-            //checkout
-            Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
-            // Route::get('stripe/checkout/session/{sessionId}', [\App\Http\Controllers\PaymentController::class, 'getTransactionViaSession']);
+            // Route::post('mamopay/checkout', [\App\Htpp\Controllers\PaymentController::class, '']);
 
-            //transaction
-            Route::post('stripe/checkout/transaction', [\App\Http\Controllers\PaymentController::class, 'saveTransaction']);
+            // //checkout
+            // Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
+            // // Route::get('stripe/checkout/session/{sessionId}', [\App\Http\Controllers\PaymentController::class, 'getTransactionViaSession']);
+
+            // //transaction
+            // Route::post('stripe/checkout/transaction', [\App\Http\Controllers\PaymentController::class, 'saveTransaction']);
             
         });
 
