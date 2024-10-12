@@ -34,8 +34,8 @@ class Bank extends Model
         'updated_at' => 'datetime'
     ];
 
-    public function vendorBank(): BelongsTo
-    {
-        return $this->belongsTo(VendorBank::class);
-    }
+    // public function vendorBank(): BelongsTo
+    // {
+    //     return $this->belongsTo(VendorBank::class);
+    // }
 }

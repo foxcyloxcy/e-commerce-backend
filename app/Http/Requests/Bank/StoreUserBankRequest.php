@@ -24,9 +24,12 @@ class StoreUserBankRequest extends FormRequest
     public function rules()
     {
         return [
-            'bank_id' => 'required|int',
-            'account_fullname' => 'required|string',
-            'account_number' => 'required|string'
+            'iban' => 'required|string',
+            'bic_code' => 'required|string',
+            'account_fullname' => 'nullable|string',
+            'account_number' => 'required|string',
+            'bank_name' => 'required|string',
+            'bank_address' => 'required|string',
         ];
     }
 
