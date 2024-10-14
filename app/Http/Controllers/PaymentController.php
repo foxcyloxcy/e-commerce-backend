@@ -8,10 +8,10 @@ use App\Models\ItemBidding;
 use App\Models\TempTransaction;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\VendorBank;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\StripeClient;
-use App\Models\VendorBank;
 
 class PaymentController extends Controller
 {
@@ -26,13 +26,13 @@ class PaymentController extends Controller
 
             $check = VendorBank::where('user_id', auth('auth-api')->user()->id)->first();
 
-            if (empty($check)) { 
+            if (empty($check)) {
                 $response = $client->request('POST', env('MAMOPAY_URL') . '/accounts/recipients', [
                     'json' => [
                         'recipient_type' => 'individual',
                         'relationship' => 'customer',
                         'bank' => [
-                            'iban' => $param['iban'],                // IBAN from $param
+                            'iban' => $param['iban'], // IBAN from $param
                             'country' => 'AE', // Optional country, defaults to 'AE'
                             'account_number' => $param['account_number'],
                             'name' => $param['bank_name'],
@@ -45,13 +45,13 @@ class PaymentController extends Controller
                         'reason' => 'Payout for Seller',
                     ],
                     'headers' => [
-                        'Authorization' => 'Bearer '.env('MAMOPAY_SECRET'),
+                        'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
                         'Accept' => 'application/json',
                         'Content-Type' => 'application/json',
                     ],
                 ]);
 
-                $rawData = json_decode($response->getBody(), true);                
+                $rawData = json_decode($response->getBody(), true);
                 // create vendor account
                 VendorBank::create([
                     'user_id' => auth('auth-api')->user()->id,
@@ -61,18 +61,18 @@ class PaymentController extends Controller
                     'account_fullname' => $param['account_fullname'],
                     'account_number' => $param['account_number'],
                     'bank_name' => $param['bank_name'],
-                    'bank_address' => $param['bank_address']
+                    'bank_address' => $param['bank_address'],
                 ]);
 
             } else {
 
-                if(empty($check->account_id)){
+                if (empty($check->account_id)) {
                     $response = $client->request('POST', env('MAMOPAY_URL') . '/accounts/recipients', [
                         'json' => [
                             'recipient_type' => 'individual',
                             'relationship' => 'customer',
                             'bank' => [
-                                'iban' => $param['iban'],                // IBAN from $param
+                                'iban' => $param['iban'], // IBAN from $param
                                 'country' => 'AE', // Optional country, defaults to 'AE'
                                 'account_number' => $param['account_number'],
                                 'name' => $param['bank_name'],
@@ -85,13 +85,13 @@ class PaymentController extends Controller
                             'reason' => 'Payout for Seller',
                         ],
                         'headers' => [
-                            'Authorization' => 'Bearer '.env('MAMOPAY_SECRET'),
+                            'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
                             'Accept' => 'application/json',
                             'Content-Type' => 'application/json',
                         ],
                     ]);
 
-                    $rawData = json_decode($response->getBody(), true);  
+                    $rawData = json_decode($response->getBody(), true);
 
                     $check->update([
                         'account_id' => $rawData['identifier'],
@@ -100,16 +100,16 @@ class PaymentController extends Controller
                         'account_fullname' => $param['account_fullname'],
                         'account_number' => $param['account_number'],
                         'bank_name' => $param['bank_name'],
-                        'bank_address' => $param['bank_address']
+                        'bank_address' => $param['bank_address'],
                     ]);
 
-                }else{
-                    $response = $client->request('PATCH', env('MAMOPAY_URL') . '/accounts/recipients/'.$check->account_id, [
+                } else {
+                    $response = $client->request('PATCH', env('MAMOPAY_URL') . '/accounts/recipients/' . $check->account_id, [
                         'json' => [
                             'recipient_type' => 'individual',
                             'relationship' => 'customer',
                             'bank' => [
-                                'iban' => $param['iban'], 
+                                'iban' => $param['iban'],
                                 'country' => 'AE', // default for UAE only
                                 'account_number' => $param['account_number'],
                                 'name' => $param['bank_name'],
@@ -122,7 +122,7 @@ class PaymentController extends Controller
                             'reason' => 'Payout for Seller',
                         ],
                         'headers' => [
-                            'Authorization' => 'Bearer '.env('MAMOPAY_SECRET'),
+                            'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
                             'Accept' => 'application/json',
                             'Content-Type' => 'application/json',
                         ],
@@ -134,7 +134,7 @@ class PaymentController extends Controller
                         'account_fullname' => $param['account_fullname'],
                         'account_number' => $param['account_number'],
                         'bank_name' => $param['bank_name'],
-                        'bank_address' => $param['bank_address']
+                        'bank_address' => $param['bank_address'],
                     ]);
 
                 }
@@ -145,7 +145,7 @@ class PaymentController extends Controller
 
             return response([
                 'data' => $data,
-                'message' => 'User Bank Successfully Updated.', 
+                'message' => 'User Bank Successfully Updated.',
             ]);
 
         } catch (\Exception $e) {
@@ -153,11 +153,67 @@ class PaymentController extends Controller
         }
     }
 
+    public function checkout(Item $item)
+    {
+        $user = auth('auth-api')->user();
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->first();
+                $asking_price = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $offer->asking_price) * 100);
+                $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                $total = $asking_price + $fees;
+            }
+            // $total = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['total']) * 100);
+            // $fees = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['platform_fee']) * 100);
+
+            $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
+                'json' => [
+                    'title' => $item->item_name,
+                    'description' => $item->item_description,
+                    'capacity' => 1,
+                    'active' => true,
+                    'return_url' => 'http://localhost:5173/payment-success',
+                    'failure_return_url' => 'http://localhost:5173/payment-failed',
+                    'processing_fee_percentage' => 0,
+                    'amount' => $item->total_fee_breakdown['total'],
+                    'amount_currency' => 'AED',
+                    'link_type' => 'standalone',
+                    'enable_tabby' => false,
+                    'enable_message' => false,
+                    'enable_tips' => false,
+                    'save_card' => 'off',
+                    'enable_customer_details' => false,
+                    'enable_quantity' => false,
+                    'enable_qr_code' => false,
+                    'send_customer_receipt' => false,
+                    'hold_and_charge_later' => false,
+                ],
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+            $data = json_decode($response->getBody(), true);
+
+            return response([
+                'data' => $data,
+                'message' => 'Checkout ready',
+            ]);
+        } catch (\Exception $e) {
+            return response(['message' => $e->getMessage()], 400);
+        }
+       
+
+    }
+
     /**
      * Checkout via stripe
      * StoreCheckoutRequest $request
      */
-    public function checkout(Item $item)
+    public function _checkout(Item $item)
     {
 
         $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initiailize

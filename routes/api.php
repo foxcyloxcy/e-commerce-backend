@@ -101,7 +101,7 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             //accounts
             Route::post('mamopay/account', [\App\Http\Controllers\PaymentController::class, 'createMamoPayAccount']);
 
-            // Route::post('mamopay/checkout', [\App\Htpp\Controllers\PaymentController::class, '']);
+            Route::post('mamopay/checkout/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
 
             // //checkout
             // Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
