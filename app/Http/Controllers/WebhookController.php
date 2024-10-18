@@ -9,11 +9,44 @@ use App\Models\Item;
 use App\Models\Bank;
 use App\Models\Transaction;
 use App\Models\TempTransaction;
+use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
     public function handle(Request $request)
     {
+
+         Log::info('MamoPay Webhook received', $request->all()); // 
+         $eventType = $request->input('event_type');
+         $payload = $request->all();
+ 
+         switch ($eventType) {
+             case 'payment_link.create':
+                Log::info('Payment Link', $request->all()); // 
+                 break;
+ 
+             case 'charge.succeeded':
+                Log::info('Payment Success', $request->all()); // 
+                 // Handle failed payment
+                 // Notify user, log the error, etc.
+                 break;
+            case 'payout.processed':
+                Log::info('Payout Processed', $request->all()); // 
+                 // Handle failed payment
+                 // Notify user, log the error, etc.
+                 break;    
+ 
+             // Add other event types as necessary
+ 
+             default:
+                 return response()->json(['message' => 'Event type not recognized.'], 400);
+         }
+               
+        
+    }
+    public function _handle(Request $request)
+    {
+        
         $payload = $request->getContent();
         $signature = $request->header('Stripe-Signature');
         $endpoint_secret = env('STRIPE_WEBHOOK_SECRET'); // Add your webhook secret in services.php

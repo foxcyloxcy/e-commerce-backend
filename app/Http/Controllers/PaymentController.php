@@ -159,14 +159,18 @@ class PaymentController extends Controller
         try {
             $client = new \GuzzleHttp\Client();
 
+            if(($item->status != Item::STATUS_PUBLISHED) && ($item->status != Item::STATUS_BID_ACCEPTED)){
+                return response(['message' => 'Please try again!'], 401);
+            }
+            $total = $item->total_fee_breakdown['total'];
+            // $fees = $item->total_fee_breakdown['total'];
             if ($item->status == Item::STATUS_BID_ACCEPTED) {
-                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->first();
-                $asking_price = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $offer->asking_price) * 100);
+                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                $asking_price = $offer->asking_price ;
                 $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
                 $total = $asking_price + $fees;
             }
-            // $total = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['total']) * 100);
-            // $fees = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['platform_fee']) * 100);
+            $payout_share = 100 - $item->total_fee_breakdown['platform_fee_percentage_value'];
 
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
@@ -177,7 +181,7 @@ class PaymentController extends Controller
                     'return_url' => 'http://localhost:5173/payment-success',
                     'failure_return_url' => 'http://localhost:5173/payment-failed',
                     'processing_fee_percentage' => 0,
-                    'amount' => $item->total_fee_breakdown['total'],
+                    'amount' => $total,
                     'amount_currency' => 'AED',
                     'link_type' => 'standalone',
                     'enable_tabby' => false,
@@ -189,6 +193,16 @@ class PaymentController extends Controller
                     'enable_qr_code' => false,
                     'send_customer_receipt' => false,
                     'hold_and_charge_later' => false,
+                    'custom_data' => [
+                        'uuid' => $item->uuid,
+                        'user_id' => $user->id,
+                        'seller_id' => $item->user_id
+                    ],
+                    'payouts_share' => [
+                        'recipient_id' => $item->user->vendorBank->account_id,
+                        'percentage_to_recipient' => $payout_share,
+                        'recipient_pays_fees' => false
+                    ]
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
@@ -209,119 +223,40 @@ class PaymentController extends Controller
 
     }
 
-    /**
-     * Checkout via stripe
-     * StoreCheckoutRequest $request
-     */
-    public function _checkout(Item $item)
-    {
-
-        $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initiailize
-        $user = auth('auth-api')->user();
-        try {
-
-            if ($item->status == Item::STATUS_BID_ACCEPTED) {
-                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->first();
-                $asking_price = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $offer->asking_price) * 100);
-                $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
-                $total = $asking_price + $fees;
-            }
-            $total = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['total']) * 100);
-            $fees = (int) (string) ((float) preg_replace("/[^0-9.]/", "", $item->total_fee_breakdown['platform_fee']) * 100);
-            $stripe_id = $item->user->vendor->stripe_id;
-            $check = $stripeClient->checkout->sessions->create([
-                'line_items' => [
-                    [
-                        'price_data' => [
-                            'currency' => 'aed',
-                            'product_data' => ['name' => $item->item_name],
-                            'unit_amount' => $total,
-                        ],
-                        'quantity' => 1, // static for now
-                    ],
-                ],
-                'payment_intent_data' => [
-                    'application_fee_amount' => $fees,
-                    'transfer_data' => ['destination' => $stripe_id],
-                ],
-                'mode' => 'payment',
-                'success_url' => 'http://localhost:5173/payment-success?session_id={CHECKOUT_SESSION_ID}&item=' . $item->uuid . '',
-                'metadata' => [ // custom data
-                    'uuid' => $item->uuid,
-                    'user_id' => $user->id, // buyer
-                    'percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
-                    'service_fee' => $fees,
-                    'sub_total' => $total,
-                    'total_amount' => $total,
-                ],
-            ]);
-            // // The session ID is now in $session->id
-            // $sessionId = $check->id;
-            // $paymentId = $check->payment_intent;
-            // // return $paymentId;
-            // $data = $stripeClient->checkout->sessions->update(
-            //     $sessionId,
-            //     [
-            //         'metadata' => [
-            //             'uuid' => $item->uuid,
-            //             'session' => $paymentId, // Store the session ID here
-            //         ],
-            //     ]
-            // );
-
-            // // ]);
-            // create temporary
-            TempTransaction::create([
-                'session_ref' => $check->id,
-                'status' => $check->status,
-            ]);
-            // return $data;
-
-            $item->update([
-                'status' => Item::STATUS_PROCESSING_PAYMENT,
-            ]);
-
-            return response([
-                'stripe_url' => $check->url,
-                'message' => 'Stripe URL Successfully generated.', // for indication only
-            ]);
-        } catch (\Exception $e) {
-            return response(['message' => $e->getMessage()], 400);
-        }
-    }
 
     /**
-     * Save Transaction after session
+     * Save Successfull Transaction
      */
-    public function saveTransaction(Request $request)
+    public function saveSuccessTransaction(Request $request)
     {
-        // return $request;
-        $stripeClient = new StripeClient(env('STRIPE_SECRET')); // initialize
-
         try {
-            $item = Item::where('uuid', $request->item_id)->first();
+            
+            $client = new \GuzzleHttp\Client();
+            
+            $response = $client->request('GET', env('MAMOPAY_URL') . '/links/'.$request->transaction_number, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
 
-            $checkout = $stripeClient->checkout->sessions->retrieve(
-                $request->session_id,
-                []
-            );
+            $data = json_decode($response->getBody(), true);
 
-            $payment = $stripeClient->paymentIntents->retrieve(
-                $checkout->payment_intent,
-                []
-            );
-
-            $transactionNumber = $checkout->payment_intent;
+            
+            $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
+            $item->update(['status' => Item::STATUS_SOLD]);
 
             $transaction = Transaction::create([
-                'transaction_number' => $transactionNumber,
-                'user_id' => auth()->user()->id,
-                'seller_id' => $item->user->id,
+                'transaction_number' => $request->transaction_number,
+                'payment_ref' => $request->payment_ref,
+                'user_id' => $data['custom_data']['user_id'],
+                'seller_id' => $data['custom_data']['seller_id'],
                 'items_quantity' => 1,
                 'service_fee_percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
                 'service_fee_amount' => $item->total_fee_breakdown['platform_fee'],
-                'subtotal_amount' => number_format(($payment->amount_received / 100), 2, '.', ' '),
-                'total_amount' => number_format(($payment->amount_received / 100), 2, '.', ' '),
+                'subtotal_amount' => number_format(($data['amount']), 2, '.', ' '),
+                'total_amount' => number_format(($data['amount']), 2, '.', ' '),
                 'status' => 1, // paid (default)
             ]);
 
@@ -329,9 +264,6 @@ class PaymentController extends Controller
                 'transaction_id' => $transaction->id,
                 'item_id' => $item->id,
             ]);
-
-            $item->status = Item::STATUS_SOLD;
-            $item->update();
 
             return response([
                 'data' => $transaction,
@@ -341,35 +273,6 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             return response(['message' => $e->getMessage()], 400);
         }
-    }
-
-    private function createVendorBank($request)
-    {
-
-        $response = $client->request('POST', env('MAMOPAY_URL') . '/accounts/recipients', [
-            'body' => '{
-            "recipient_type":"individual",
-            "relationship":"customer",
-            "bank":{
-                "iban":"' . $request['iban'] . '",
-                "country":"AE",
-                "account_number":"' . $request['account_number'] . '",
-                "name":"' . $request['bank_name'] . '",
-                "address":"' . $request['bank_address'] . '",
-                "bic_code":"' . $request['bic_code'] . '",
-            },
-            "email":"nabarro@gmail.com",
-            "first_name":"ianxx",
-            "last_name":"navxxs",
-            "reason":"payout sample"
-            }',
-            'headers' => [
-                'Authorization' => 'Bearer sk-7e181dd9-3324-4ddd-a6ef-d8d90b341324',
-                'accept' => 'application/json',
-                'content-type' => 'application/json',
-            ],
-        ]);
-
     }
 
 }

@@ -27,6 +27,7 @@ class Transaction extends Model
     protected $fillable = [
         'uuid',
         'transaction_number',
+        'payment_ref',
         'user_id',
         'seller_id',
         'items_quantity',
@@ -74,14 +75,25 @@ class Transaction extends Model
      * Relationships
      */
 
-    public function transactionItem(): HasMany
+    // public function transactionItem(): HasMany
+    // {
+    //     return $this->hasMany(TransactionItem::class, 'transaction_id');
+    // }
+
+    public function transactionItem(): HasOne
     {
-        return $this->hasMany(TransactionItem::class, 'transaction_id');
+        return $this->hasOne(TransactionItem::class, 'transaction_id');
     }
 
-    public function vendorBank(): BelongsTo
+    // public function vendorBank(): BelongsTo
+    // {
+    //     return $this->belongsTo(VendorBank::class, 'vendor_bank_id');
+    // }
+
+    public function seller(): BelongsTo
     {
-        return $this->belongsTo(VendorBank::class, 'vendor_bank_id');
+        return $this->belongsTo(User::class, 'seller_id');
     }
+
 
 }

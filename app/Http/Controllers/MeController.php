@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use App\Models\VendorBank;
 use App\Models\Item;
 use App\Models\ItemBidding;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\User\UpdateUserDetailsRequest;
 use App\Http\Requests\User\UpdateUserVendorDetailsRequest;
@@ -293,6 +294,21 @@ class MeController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    protected function myPurchased(Request $request)
+    {
+        $size = $request->size ?: 10;
+        try {
+            $data = Transaction::with('transactionItem', 'transactionItem.item', 'seller')
+            ->where('user_id', auth('auth-api')->user()->id)
+            ->paginate($size);    
+            return response(['offers' => $data], 200);
+
+        } catch (\Exception $e) {
             #error message
             return response(['message' => $e->getMessage()], 400);
         }
