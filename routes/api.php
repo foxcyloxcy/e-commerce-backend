@@ -33,7 +33,7 @@ Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'fo
 Route::post('set-forgot-password', [\App\Http\Controllers\AuthController::class, 'setNewPassword']);
 
 // WebHook
-Route::post('webhook/stripe', [\App\Http\Controllers\WebHookController::class, 'handle']);
+Route::post('webhook/mamopay', [\App\Http\Controllers\WebHookController::class, 'handle']);
 
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
@@ -94,14 +94,21 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::get('offers-to-me/{item}', [\App\Http\Controllers\MeController::class, 'offersToMeByUuid']);
             Route::put('offers-to-me/accept/{bid}', [\App\Http\Controllers\MeController::class, 'acceptOffer']);
             Route::put('offers-to-me/reject/{bid}', [\App\Http\Controllers\MeController::class, 'rejectOffer']);
+
+            #
+            Route::get('my-purchased', [\App\Http\Controllers\MeController::class, 'myPurchased']);
         });
 
         #Payment Mamopay
         Route::group(['prefix' => 'payment'], function () {
             //accounts
             Route::post('mamopay/account', [\App\Http\Controllers\PaymentController::class, 'createMamoPayAccount']);
-
+            //checkout
             Route::post('mamopay/checkout/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
+
+            // payment transaction
+            Route::post('mamopay/transaction/success', [\App\Http\Controllers\PaymentController::class, 'saveSuccessTransaction']);
+            
 
             // //checkout
             // Route::post('stripe/checkout/session/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
