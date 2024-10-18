@@ -33,7 +33,7 @@ Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'fo
 Route::post('set-forgot-password', [\App\Http\Controllers\AuthController::class, 'setNewPassword']);
 
 // WebHook
-Route::post('webhook/mamopay', [\App\Http\Controllers\WebHookController::class, 'handle']);
+Route::post('webhook/mamopay', [\App\Http\Controllers\MamoPayWebHookController::class, 'handle']);
 
 // with auth api to access
 Route::group(['middleware' => 'auth:auth-api'], function () {
