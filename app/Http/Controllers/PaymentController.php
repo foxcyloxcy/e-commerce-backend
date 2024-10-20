@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\ItemBidding;
 use App\Models\TempTransaction;
 use App\Models\Transaction;
+use App\Models\Discount;
 use App\Models\TransactionItem;
 use App\Models\VendorBank;
 use Illuminate\Http\Request;
@@ -153,7 +154,7 @@ class PaymentController extends Controller
         }
     }
 
-    public function checkout(Item $item)
+    public function checkout(Request $request,Item $item)
     {
         $user = auth('auth-api')->user();
         try {
@@ -162,15 +163,53 @@ class PaymentController extends Controller
             if(($item->status != Item::STATUS_PUBLISHED) && ($item->status != Item::STATUS_BID_ACCEPTED)){
                 return response(['message' => 'Please try again!'], 401);
             }
-            $total = $item->total_fee_breakdown['total'];
-            // $fees = $item->total_fee_breakdown['total'];
-            if ($item->status == Item::STATUS_BID_ACCEPTED) {
-                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
-                $asking_price = $offer->asking_price ;
-                $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
-                $total = $asking_price + $fees;
+
+            if(!empty($request->discount)){
+                //check discount if exist
+                $discount = Discount::where('code', $request->discount)->where('status', 0)->first();
+                if(!empty($discount)){ // if valid
+                    
+                    if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                        $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                        $asking_price = $offer->asking_price ;
+                        $discount_percentage = $discount->discount_percentage;
+                        $fees = ($asking_price * $discount->discount_percentage) / 100;
+                        $total = $asking_price + $fees;
+                        $payout_share = round(($offer->asking_price / $total) * 100);
+
+                    }else{
+                        $discount_percentage = $discount->discount_percentage;
+                        $fees = ($item->price * $discount->discount_percentage) / 100;
+                        $total = $item->price + $fees;
+                        $payout_share = round(($item->price / $total) * 100);
+                        
+                    }
+
+                    
+                }else {
+                    return response(['message' => 'Invalid Promo Code!'], 401);
+                }
+            }else{
+                
+                if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                    $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                    
+                    $discount_percentage = $item->total_fee_breakdown['platform_fee_percentage_value'];
+                    $asking_price = $offer->asking_price ;
+                    $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                    $total = $asking_price + $fees;
+                    $payout_share = round(($asking_price / $total) * 100);
+
+                }else{
+                    $discount_percentage = $item->total_fee_breakdown['platform_fee_percentage_value'];
+                    $fees = ($item->price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                    $total = $item->total_fee_breakdown['total'];
+                    $payout_share = round(($item->price / $total) * 100);
+                    
+                }     
+
             }
-            $payout_share = 100 - $item->total_fee_breakdown['platform_fee_percentage_value'];
+
 
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
@@ -196,7 +235,8 @@ class PaymentController extends Controller
                     'custom_data' => [
                         'uuid' => $item->uuid,
                         'user_id' => $user->id,
-                        'seller_id' => $item->user_id
+                        'seller_id' => $item->user_id,
+                        'discount' => $request->discount, //discount code
                     ],
                     'payouts_share' => [
                         'recipient_id' => $item->user->vendorBank->account_id,
@@ -247,6 +287,30 @@ class PaymentController extends Controller
             $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
             $item->update(['status' => Item::STATUS_SOLD]);
 
+            // $data['custom_data']['discount_code']
+
+            $discount_amount_percentage = 0;
+            $discount_amount = 0;
+            if(!empty($data['custom_data']['discount'])){
+                $discount = Discount::where('code', $data['custom_data']['discount'])->where('status', 0)->first();
+                if(!empty($discount)){
+                    $discount_amount_percentage = $discount->discount_percentage;
+                    
+                    if($item->status == Item::STATUS_BID_ACCEPTED){
+                        $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                        $discount_amount = ($offer->asking_price * $discount->discount_percentage) / 100;
+                    }else{
+                        $discount_amount = ($item->price * $discount->discount_percentage) / 100;
+                    }
+
+                    $discount->update([
+                        'user_id' => $data['custom_data']['user_id'],
+                        'status' => 1
+                    ]);
+                }
+            }
+           
+
             $transaction = Transaction::create([
                 'transaction_number' => $request->transaction_number,
                 'payment_ref' => $request->payment_ref,
@@ -255,6 +319,8 @@ class PaymentController extends Controller
                 'items_quantity' => 1,
                 'service_fee_percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
                 'service_fee_amount' => $item->total_fee_breakdown['platform_fee'],
+                'discount_amount_percentage' => $discount_amount_percentage,
+                'discount_amount' => $discount_amount,
                 'subtotal_amount' => number_format(($data['amount']), 2, '.', ' '),
                 'total_amount' => number_format(($data['amount']), 2, '.', ' '),
                 'status' => 1, // paid (default)
@@ -269,6 +335,35 @@ class PaymentController extends Controller
                 'data' => $transaction,
                 'message' => 'Successfully Paid.', // for indication only
             ]);
+
+        } catch (\Exception $e) {
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Payout List
+     */
+    public function payoutsList(Request $request)
+    {
+        try {
+            
+            $client = new \GuzzleHttp\Client();
+
+
+            $response = $client->request('GET', env('MAMOPAY_URL') .  '/disbursements', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ],
+            ]);
+
+
+            $data = json_decode($response->getBody(), true);
+
+            return response(['data' => $data], 200);
+
 
         } catch (\Exception $e) {
             return response(['message' => $e->getMessage()], 400);

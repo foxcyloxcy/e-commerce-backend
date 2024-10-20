@@ -8,7 +8,7 @@
 <table>
       <tbody>
         <tr>
-          <td style="padding: 10px;">
+          <td style="padding: 10px; font-size: 16px;">
             <p>
                 Hi {{ $user->first_name }},
             </p>
@@ -19,12 +19,12 @@
 <table>
     <tbody>
             <tr>
-                <td style="padding: 10px;">
+                <td style="padding: 10px; font-size: 16px;">
                     <p>Your item has been Declined.</p>
                 </td>
             </tr>
             <tr>
-                <td style="padding: 10px;">
+                <td style="padding: 10px; font-size: 16px;">
                     <p>Reason:</p>
                     <p>{{ $data->reason }}</p>
                 </td>
