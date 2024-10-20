@@ -18,14 +18,14 @@
             padding: 0;
         }
         body {
-            font-size: 14px;
+            font-size: 16px;
             color: #394551;
             font-family: 'Inter', sans-serif;
         }
         th,
         td {
             text-align: left;
-            font-size: 8px;
+            font-size: 14px;
         }
         th {
           text-transform: uppercase;
@@ -37,7 +37,7 @@
         }
         p{
           color: #081626;
-          font-size: 14;
+          font-size: 16px;
           font-weight: 400;
         }
         .company-logo {
@@ -54,13 +54,13 @@
             background-color: #2C3694;
             border: none;
             color: #E6E8E9;
-            padding: 5px;
+            padding: 8px;
             border-radius: 5%;
-            font-size: 12px;
+            font-size: 14px;
         }
         .footer {
             color: #8D949B;
-            font-size: 9px;
+            font-size: 12px;
             margin-top: 10px;
         }
       </style>
