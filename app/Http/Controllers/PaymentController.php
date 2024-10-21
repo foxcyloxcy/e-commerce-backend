@@ -309,6 +309,8 @@ class PaymentController extends Controller
                     ]);
                 }
             }
+
+            // return $data['amount'];
            
 
             $transaction = Transaction::create([
@@ -321,8 +323,8 @@ class PaymentController extends Controller
                 'service_fee_amount' => $item->total_fee_breakdown['platform_fee'],
                 'discount_amount_percentage' => $discount_amount_percentage,
                 'discount_amount' => $discount_amount,
-                'subtotal_amount' => number_format(($data['amount']), 2, '.', ' '),
-                'total_amount' => number_format(($data['amount']), 2, '.', ' '),
+                'subtotal_amount' => $data['amount'],
+                'total_amount' => $data['amount'],
                 'status' => 1, // paid (default)
             ]);
 
