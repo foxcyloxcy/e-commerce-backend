@@ -372,4 +372,91 @@ class PaymentController extends Controller
         }
     }
 
+    public function payFeaturedProduct(Item $item)
+    {
+        $user = auth('auth-api')->user();
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
+                'json' => [
+                    'title' => $item->item_name,
+                    'description' => 'Featured Product Payment',
+                    'capacity' => 1,
+                    'active' => true,
+                    'return_url' => 'http://localhost:5173/featured-payment-success',
+                    'failure_return_url' => 'http://localhost:5173/featured-payment-failed',
+                    'processing_fee_percentage' => 0,
+                    'amount' => 100,
+                    'amount_currency' => 'AED',
+                    'link_type' => 'standalone',
+                    'enable_tabby' => false,
+                    'enable_message' => false,
+                    'enable_tips' => false,
+                    'save_card' => 'off',
+                    'enable_customer_details' => false,
+                    'enable_quantity' => false,
+                    'enable_qr_code' => false,
+                    'send_customer_receipt' => false,
+                    'hold_and_charge_later' => false,
+                    'custom_data' => [
+                        'uuid' => $item->uuid,
+                        'user_id' => $item->user_id
+                    ]
+                ],
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            return response([
+                'data' => $data,
+                'message' => 'Checkout ready',
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+      /**
+     * Save Successfull Transaction (featured product)
+     */
+    public function saveFeaturedProductSuccessTransaction(Request $request)
+    {
+        try {
+
+            $client = new \GuzzleHttp\Client();
+            
+            $response = $client->request('GET', env('MAMOPAY_URL') . '/links/'.$request->transaction_number, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            
+            $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
+            
+            $item->update(['is_featured' => 1]);
+            
+            return response([
+                'data' => $data,
+                'message' => 'Successfully Paid.', // for indication only
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
 }

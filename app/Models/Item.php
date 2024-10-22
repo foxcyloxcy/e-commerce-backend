@@ -41,7 +41,8 @@ class Item extends Model
         'status',
         'reject_reason',
         'is_bid',
-        'address'
+        'address',
+        'is_featured'
     ];
 
     /**

@@ -105,8 +105,11 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('mamopay/account', [\App\Http\Controllers\PaymentController::class, 'createMamoPayAccount']);
             //checkout
             Route::post('mamopay/checkout/{item}', [\App\Http\Controllers\PaymentController::class, 'checkout']);
+            Route::post('mamopay/checkout/featured-product/{item}', [\App\Http\Controllers\PaymentController::class, 'payFeaturedProduct']);
+
             // payment transaction
             Route::post('mamopay/transaction/success', [\App\Http\Controllers\PaymentController::class, 'saveSuccessTransaction']);
+            Route::post('mamopay/transaction/featured-product/success', [\App\Http\Controllers\PaymentController::class, 'saveFeaturedProductSuccessTransaction']);
             // payouts
             Route::get('mamopay/payouts', [\App\Http\Controllers\PaymentController::class, 'payoutsList']);
             
