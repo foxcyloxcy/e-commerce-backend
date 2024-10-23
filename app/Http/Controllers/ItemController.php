@@ -79,7 +79,14 @@ class ItemController extends Controller
         DB::beginTransaction();
 
         try {
-            $param['user_id'] = auth()->user()->id;
+            $user = auth('auth-api')->user();
+            $param['user_id'] = auth('auth-api')->user()->id;
+
+            // check if user has valid bank details
+            if(empty($user->vendorBank)){
+                return response(['message' => 'Please provide a bank details to your profile!'], 400);
+            }
+
             $item = Item::create($param);
 
             foreach($request->properties as $val){
