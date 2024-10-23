@@ -1,7 +1,7 @@
 @extends('mail.layout.default')
 
 @section('title')
-    @lang('Approved')
+    @lang('New Bid')
 @endsection
 
 @section('content')
@@ -20,7 +20,7 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                    <p>Exciting news - Your item has been Approved.</p>
+                    <p>Your {{ $item->item_name}} received a bid of {{ $bid->asking_price }}.</p>
                 </td>
             </tr>
           

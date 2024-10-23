@@ -18,7 +18,7 @@
             padding: 0;
         }
         body {
-            font-size: 16px;
+            font-size: 20px !important;
             color: #394551;
             font-family: 'Inter', sans-serif;
         }
@@ -60,7 +60,7 @@
         }
         .footer {
             color: #8D949B;
-            font-size: 12px;
+            font-size: 14px;
             margin-top: 10px;
         }
       </style>
@@ -75,7 +75,7 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                        <p>Thanks for shopping at the reloved marketplace. </p>
+                                        <p>Thanks for using the reloved platform. </p>
                                     </td>
                                 </tr>
                                 
@@ -87,11 +87,6 @@
                     <td style="padding: 10px;">
                         <table>
                             <tbody>
-                                <tr>
-                                <td>
-                                    <img style="width: 15%;" src="https://reloved-uat.s3.ap-northeast-1.amazonaws.com/asset/mainlogo.png">
-                                </td>
-                                </tr>
                                 <tr>
                                     <td>
                                         <div class="footer">

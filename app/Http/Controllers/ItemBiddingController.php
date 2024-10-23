@@ -9,6 +9,7 @@ use App\Http\Requests\Item\UpdateStatusItemBiddingRequest;
 use App\Models\Item;
 use App\Models\ItemBidding;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\NewBidNotification;
 
 class ItemBiddingController extends Controller
 {
@@ -52,6 +53,12 @@ class ItemBiddingController extends Controller
         try {
             $bid = ItemBidding::create($param);
             DB::commit();
+
+            //send notif
+
+            //get item
+            $item = Item::where('id', $bid->item_id)->first();
+            $bid->seller->notify(new NewBidNotification($bid, $item));
 
             return response([
                 'data' => $bid,
