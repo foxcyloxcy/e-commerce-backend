@@ -1,7 +1,7 @@
 @extends('mail.layout.default')
 
 @section('title')
-    @lang('New Bid')
+    @lang('Bid Accepted')
 @endsection
 
 @section('content')
@@ -20,7 +20,7 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                     <p>You have received a bid on {{ $item->item_name}}  item, visit the 'bids received' page under your profile on the reloved website to accept or reject your offer</p>
+                    <p>Your offer has been accepted on the {{$data->item_name}} item, you can now go to your profile, pending bids and pay for this item. Once the item has been paid you will receive the sellers details for arranging collection. Thank you for using the reloved platform!</p>
                 </td>
             </tr>
           

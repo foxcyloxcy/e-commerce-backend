@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Bank\StoreUserBankRequest;
 use App\Models\Item;
+use App\Models\User;
 use App\Models\ItemBidding;
 use App\Models\TempTransaction;
 use App\Models\Transaction;
@@ -13,6 +14,7 @@ use App\Models\VendorBank;
 use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\StripeClient;
+use App\Notifications\PaymentReceiveNotification;
 
 class PaymentController extends Controller
 {
@@ -332,6 +334,10 @@ class PaymentController extends Controller
                 'transaction_id' => $transaction->id,
                 'item_id' => $item->id,
             ]);
+
+            // get buyer and send email notif
+            $user = User::where('id',$data['custom_data']['user_id'])->first();
+            $user->notify(new PaymentReceiveNotification($item));
 
             return response([
                 'data' => $transaction,

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Me\MyOfferResource;
 use App\Http\Resources\Me\MyOfferCollection;
 use Illuminate\Support\Arr;
+use App\Notifications\BidAcceptedNotification;
+use App\Notifications\BidRejectedNotification;
 
 class MeController extends Controller
 {
@@ -269,13 +271,15 @@ class MeController extends Controller
     {
         DB::beginTransaction();
         try {
-            // return $bid;
+            // return $bid->item;
             $bid->update(['is_accepted' => 1]);
             $bid->item->update(['status' => 4]);
 
             DB::commit();
-            return response(['data' =>  $bid, 'message' => 'Successfully Accept Offer.'], 200);
 
+            //send email for user/bidder
+            $bid->buyer->notify(new BidAcceptedNotification($bid->item));
+            return response(['data' =>  $bid, 'message' => 'Successfully Accept Offer.'], 200);
         } catch (\Exception $e) {
             DB::rollback();
             #error message
@@ -290,8 +294,10 @@ class MeController extends Controller
             $bid->update(['is_accepted' => 2]);
 
             DB::commit();
-            return response(['data' =>  $bid, 'message' => 'Successfully Reject Offer.'], 200);
 
+            //send email for user/bidder
+            $bid->buyer->notify(new BidRejectedNotification($bid->item));
+            return response(['data' =>  $bid, 'message' => 'Successfully Reject Offer.'], 200);
         } catch (\Exception $e) {
             DB::rollback();
             #error message
