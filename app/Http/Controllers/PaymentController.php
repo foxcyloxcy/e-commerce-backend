@@ -430,7 +430,7 @@ class PaymentController extends Controller
         }
     }
 
-      /**
+    /**
      * Save Successfull Transaction (featured product)
      */
     public function saveFeaturedProductSuccessTransaction(Request $request)

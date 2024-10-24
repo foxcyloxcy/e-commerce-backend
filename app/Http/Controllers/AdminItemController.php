@@ -113,4 +113,25 @@ class AdminItemController extends Controller
         }
 
     }
+
+    /**
+     * Delete items by uuid
+     *
+     * @param  mixed $item
+     * @return void
+     */
+    protected function delete(Item $item)
+    {
+        try {
+
+            $item->delete();
+
+            return response(['data' => $item, 'message' => "Successfully Deleted"], 200);
+
+        } catch (\Exception $e) {
+            #error message
+            return response(['message' => $e->getMessage()], 400);
+        }
+
+    }
 }
