@@ -32,6 +32,7 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
         Route::patch('reject/{item}', [\App\Http\Controllers\AdminItemController::class, 'declineItem']);
         Route::get('{item}', [\App\Http\Controllers\AdminItemController::class, 'show']);
         Route::get('status/pending', [\App\Http\Controllers\AdminItemController::class, 'pending']);
+        Route::delete('{item}', [\App\Http\Controllers\AdminItemController::class, 'delete']);
     });
 
     #Me

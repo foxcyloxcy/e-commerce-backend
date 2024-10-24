@@ -115,6 +115,11 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             
         });
 
+        #Discount
+        Route::group(['prefix' => 'discount'], function () {
+            Route::post('validate', [\App\Http\Controllers\DiscountController::class, 'validateDiscount']);
+        });
+
         
 
     });
