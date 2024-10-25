@@ -42,12 +42,12 @@ class DiscountController extends Controller
                 ];
                 
             }else {
-                return response(['message' => 'Invalid Promo Code!'], 401);
+                return response(['message' => 'Discount code is Invalid.'], 401);
             }
 
             return response([
                 'total_discount_breakdown' => $data,
-                'message' => 'Discount successfully fetch.',
+                'message' => 'Discount code is valid.',
             ]);
 
         } catch (\Exception $e) {

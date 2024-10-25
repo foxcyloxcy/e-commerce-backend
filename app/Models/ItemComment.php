@@ -37,12 +37,17 @@ class ItemComment extends Model
 
     public function item(): BelongsTo
     {
-        return $this->belongsTo(Item::class, 'id');
+        return $this->belongsTo(Item::class, 'item_id');
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
 }

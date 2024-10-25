@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\Item\StoreItemCommentRequest;
 use App\Models\Item;
+use App\Models\User;
 use App\Models\ItemComment;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\NewCommentOwnerNotification;
+use App\Notifications\NewCommentUserNotification;
 
 class ItemCommentController extends Controller
 {
@@ -47,11 +50,48 @@ class ItemCommentController extends Controller
         DB::beginTransaction();
 
         try {
-            $bid = ItemComment::create($param);
+            $comment = ItemComment::create($param);
             DB::commit();
 
+            //notify owner of item if has more than 1 comment
+            $checkComment = ItemComment::where('item_id', $comment->item_id)->count();
+
+            if($checkComment == 1){
+                // sent to seller
+                $comment->item->user->notify(new NewCommentOwnerNotification($comment->item));
+            }else{
+                
+                if($comment->user_id == $comment->item->user->id){ // send to buyers
+  
+                    $userList = ItemComment::where('item_id', $comment->item_id)->where('user_id', '!=',$comment->item->user->id)->get();
+
+                    $uniqueIds = $userList->pluck('user_id')->unique();
+                    // return $uniqueIds;
+                    $identifier = 'Seller';
+                    foreach ($uniqueIds as $ownerId) {
+                        $user = User::find($ownerId);
+                        if ($user) {
+                            $user->notify(new NewCommentUserNotification($comment->item, $identifier));
+                        }
+                    }
+
+                }else{ // send to seller and buyer
+                    $userList = ItemComment::where('item_id', $comment->item_id)->where('user_id', '!=',$comment->user_id)->get();
+
+                    $uniqueIds = $userList->pluck('user_id')->unique();
+                    $identifier = 'Buyer';
+                    foreach ($uniqueIds as $ownerId) {
+                        $user = User::find($ownerId);
+                        if ($user) {
+                            $user->notify(new NewCommentUserNotification($comment->item, $identifier));
+                        }
+                    }
+                    
+                }
+            }
+            
             return response([
-                'data' => $bid,
+                'data' => $comment,
                 'message' => 'Successfully Add New Comment.',
             ]);
         } catch (\Exception $e) {
