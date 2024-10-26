@@ -42,7 +42,8 @@ class Item extends Model
         'reject_reason',
         'is_bid',
         'address',
-        'is_featured'
+        'is_featured',
+        'featured_exp_date'
     ];
 
     /**
