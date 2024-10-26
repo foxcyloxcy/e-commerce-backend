@@ -9,6 +9,7 @@ use App\Models\ItemBidding;
 use App\Models\TempTransaction;
 use App\Models\Transaction;
 use App\Models\Discount;
+use App\Models\DiscountCode;
 use App\Models\TransactionItem;
 use App\Models\VendorBank;
 use Illuminate\Http\Request;
@@ -168,7 +169,8 @@ class PaymentController extends Controller
 
             if(!empty($request->discount)){
                 //check discount if exist
-                $discount = Discount::where('code', $request->discount)->where('status', 0)->first();
+                // $discount = Discount::where('code', $request->discount)->where('status', 0)->first();
+                $discount = DiscountCode::where('code', $request->discount)->where('status', 1)->first();
                 if(!empty($discount)){ // if valid
                     
                     if ($item->status == Item::STATUS_BID_ACCEPTED) {
@@ -189,7 +191,7 @@ class PaymentController extends Controller
 
                     
                 }else {
-                    return response(['message' => 'Invalid Promo Code!'], 401);
+                    return response(['message' => 'Discount code is Invalid.'], 401);
                 }
             }else{
                 
@@ -294,7 +296,7 @@ class PaymentController extends Controller
             $discount_amount_percentage = 0;
             $discount_amount = 0;
             if(!empty($data['custom_data']['discount'])){
-                $discount = Discount::where('code', $data['custom_data']['discount'])->where('status', 0)->first();
+                $discount = DiscountCode::where('code', $data['custom_data']['discount'])->where('status', 1)->first();
                 if(!empty($discount)){
                     $discount_amount_percentage = $discount->discount_percentage;
                     
@@ -306,15 +308,18 @@ class PaymentController extends Controller
                     }
 
                     $discount->update([
+                        'used' => $discount->used + 1
+                    ]);
+
+                    Discount::create([
                         'user_id' => $data['custom_data']['user_id'],
+                        'code' => $discount->code,
+                        'discount_percentage' => $discount->discount_percentage,
                         'status' => 1
                     ]);
                 }
             }
-
-            // return $data['amount'];
            
-
             $transaction = Transaction::create([
                 'transaction_number' => $request->transaction_number,
                 'payment_ref' => $request->payment_ref,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Discount;
+use App\Models\DiscountCode;
 use App\Models\Item;
 use App\Models\ItemBidding;
 use Illuminate\Http\Request;
@@ -21,8 +22,11 @@ class DiscountController extends Controller
             $item = Item::where('id', $param['item_id'])->first();
 
             // get discount if exist
-            $discount = Discount::where('code', $param['discount'])->where('status', 0)->first();
+            $discount = DiscountCode::where('code', $param['discount'])->where('status', 1)->first();
 
+            if(empty($discount)){
+                return response(['message' => 'Discount code is Invalid.'], 401);
+            }
 
             if ($item->status == Item::STATUS_BID_ACCEPTED) {
                 $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
