@@ -242,11 +242,11 @@ class PaymentController extends Controller
                         'seller_id' => $item->user_id,
                         'discount' => $request->discount, //discount code
                     ],
-                    'payouts_share' => [
-                        'recipient_id' => $item->user->vendorBank->account_id,
-                        'percentage_to_recipient' => $payout_share,
-                        'recipient_pays_fees' => false
-                    ]
+                    // 'payouts_share' => [
+                    //     'recipient_id' => $item->user->vendorBank->account_id,
+                    //     'percentage_to_recipient' => $payout_share,
+                    //     'recipient_pays_fees' => false
+                    // ]
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
@@ -289,9 +289,13 @@ class PaymentController extends Controller
 
             
             $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
-            $item->update(['status' => Item::STATUS_SOLD]);
+            
+            
 
             // $data['custom_data']['discount_code']
+
+            // $platform_fee_percentage_value = 0;
+            // $platform_fee = 0;
 
             $discount_amount_percentage = 0;
             $discount_amount = 0;
@@ -319,7 +323,17 @@ class PaymentController extends Controller
                     ]);
                 }
             }
-           
+
+            $shared_amount = $item->price;
+            $platform_fee = ($item->price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;;
+            if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                $shared_amount = $offer->asking_price ;
+                $platform_fee = ($offer->asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                
+
+            }
+
             $transaction = Transaction::create([
                 'transaction_number' => $request->transaction_number,
                 'payment_ref' => $request->payment_ref,
@@ -327,7 +341,7 @@ class PaymentController extends Controller
                 'seller_id' => $data['custom_data']['seller_id'],
                 'items_quantity' => 1,
                 'service_fee_percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
-                'service_fee_amount' => $item->total_fee_breakdown['platform_fee'],
+                'service_fee_amount' => $platform_fee,
                 'discount_amount_percentage' => $discount_amount_percentage,
                 'discount_amount' => $discount_amount,
                 'subtotal_amount' => $data['amount'],
@@ -339,6 +353,30 @@ class PaymentController extends Controller
                 'transaction_id' => $transaction->id,
                 'item_id' => $item->id,
             ]);
+
+            $item->update(['status' => Item::STATUS_SOLD]);
+
+            $payout = $client->request('POST', env('MAMOPAY_URL').'/disbursements', [
+                'json' => [
+                    'disbursements' => [
+                        [
+                            'first_name_or_business_name' => $item->user->first_name,
+                            'last_name' => $item->user->last_name,
+                            'account' => $item->user->vendorBank->iban,
+                            'transfer_method' => 'BANK_ACCOUNT',
+                            'reason' => 'Seller Payout',
+                            'amount' => $shared_amount,
+                        ]
+                    ],
+                ],
+                'headers' => [
+                  'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                  'accept' => 'application/json',
+                  'content-type' => 'application/json',
+                ],
+              ]);
+            $payoutData = json_decode($payout->getBody(), true); 
+            $transaction->update(['payout_ref' => $payoutData[0]['identifier']]);
 
             // get buyer and send email notif
             $user = User::where('id',$data['custom_data']['user_id'])->first();
@@ -365,6 +403,10 @@ class PaymentController extends Controller
 
 
             $response = $client->request('GET', env('MAMOPAY_URL') .  '/disbursements', [
+            'query' => [
+                'page' => 1,  // Specify the page number
+                'limit' => 10, // Specify the number of records per page
+            ],
             'headers' => [
                 'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
                 'Accept' => 'application/json',

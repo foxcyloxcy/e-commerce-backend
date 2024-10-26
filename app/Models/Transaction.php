@@ -28,6 +28,7 @@ class Transaction extends Model
         'uuid',
         'transaction_number',
         'payment_ref',
+        'payout_ref',
         'user_id',
         'seller_id',
         'items_quantity',
