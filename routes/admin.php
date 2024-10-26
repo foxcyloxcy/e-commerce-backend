@@ -39,6 +39,14 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
     Route::group(['prefix' => 'me'], function () {
         Route::put('change-password', [\App\Http\Controllers\AdminAuthController::class, 'changePassword']);
     });
+
+    #Discount
+    Route::group(['prefix' => 'discounts'], function () {
+        Route::get('', [\App\Http\Controllers\AdminDiscountController::class, 'index']);
+        Route::post('', [\App\Http\Controllers\AdminDiscountController::class, 'store']);
+        Route::patch('{discount}', [\App\Http\Controllers\AdminDiscountController::class, 'updateStatus']);
+
+    });
    
 });
 
