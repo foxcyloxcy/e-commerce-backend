@@ -45,7 +45,17 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
         Route::get('', [\App\Http\Controllers\AdminDiscountController::class, 'index']);
         Route::post('', [\App\Http\Controllers\AdminDiscountController::class, 'store']);
         Route::patch('{discount}', [\App\Http\Controllers\AdminDiscountController::class, 'updateStatus']);
+    });
 
+    #Discount
+    Route::group(['prefix' => 'transactions'], function () {
+        Route::get('', [\App\Http\Controllers\AdminTransactionController::class, 'index']);
+        Route::get('{transaction}', [\App\Http\Controllers\AdminTransactionController::class, 'show']);
+    });
+
+    #Users
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('', [\App\Http\Controllers\AdminUserController::class, 'index']);
     });
    
 });

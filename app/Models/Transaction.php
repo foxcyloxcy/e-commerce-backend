@@ -96,5 +96,10 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'seller_id');
     }
 
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
 
 }
