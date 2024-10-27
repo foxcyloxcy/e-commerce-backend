@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 use App\Notifications\PaymentReceiveNotification;
+use Carbon\Carbon;
 
 class PaymentController extends Controller
 {
@@ -483,6 +484,15 @@ class PaymentController extends Controller
     public function saveFeaturedProductSuccessTransaction(Request $request)
     {
         try {
+        //      // Create a Carbon instance for the current date and time
+        // $date = Carbon::now();
+
+        // // Add 7 days to the date
+        // $date->addDays(7)->timestamp;
+        // return $date;
+
+        // Display the new date
+        // return $date->toDateString(); // Outputs the date 7 days from now
 
             $client = new \GuzzleHttp\Client();
             
@@ -499,7 +509,13 @@ class PaymentController extends Controller
             
             $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
             
-            $item->update(['is_featured' => 1]);
+
+            $currentDate = Carbon::now();
+
+            $item->update([
+                'is_featured' => 1,
+                'featured_exp_date' => $currentDate->addDays(7)
+            ]);
             
             return response([
                 'data' => $data,
