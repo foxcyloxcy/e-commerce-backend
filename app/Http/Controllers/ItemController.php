@@ -44,8 +44,7 @@ class ItemController extends Controller
                 });
             })
             ->when(!empty($request->filter['keyword']), function ($q) use ($request) {
-                $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%')
-                ->orWhere('item_description', 'LIKE','%'.$request->filter['keyword'].'%');
+                $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%');
             })
             ->when(!empty($request->filter['min_price']) || !empty($request->filter['max_price']), function ($q) use ($request) {
                 if(!empty($request->filter['min_price']) && empty($request->filter['max_price'])){
