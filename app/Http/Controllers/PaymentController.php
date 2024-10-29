@@ -17,6 +17,7 @@ use Stripe\Stripe;
 use Stripe\StripeClient;
 use App\Notifications\PaymentReceiveNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -26,6 +27,7 @@ class PaymentController extends Controller
 
         $user = auth('auth-api')->user();
 
+        DB::beginTransaction();
         try {
             $client = new \GuzzleHttp\Client();
 
@@ -148,12 +150,14 @@ class PaymentController extends Controller
 
             $data = json_decode($response->getBody(), true);
 
+            DB::commit();
             return response([
                 'data' => $data,
                 'message' => 'User Bank Successfully Updated.',
             ]);
 
         } catch (\Exception $e) {
+            DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
@@ -274,6 +278,7 @@ class PaymentController extends Controller
      */
     public function saveSuccessTransaction(Request $request)
     {
+        DB::beginTransaction();
         try {
             
             $client = new \GuzzleHttp\Client();
@@ -383,12 +388,15 @@ class PaymentController extends Controller
             $user = User::where('id',$data['custom_data']['user_id'])->first();
             $user->notify(new PaymentReceiveNotification($item));
 
+            DB::commit();
+
             return response([
                 'data' => $transaction,
                 'message' => 'Successfully Paid.', // for indication only
             ]);
 
         } catch (\Exception $e) {
+            DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
@@ -483,16 +491,8 @@ class PaymentController extends Controller
      */
     public function saveFeaturedProductSuccessTransaction(Request $request)
     {
+        DB::beginTransaction();
         try {
-        //      // Create a Carbon instance for the current date and time
-        // $date = Carbon::now();
-
-        // // Add 7 days to the date
-        // $date->addDays(7)->timestamp;
-        // return $date;
-
-        // Display the new date
-        // return $date->toDateString(); // Outputs the date 7 days from now
 
             $client = new \GuzzleHttp\Client();
             
@@ -516,6 +516,8 @@ class PaymentController extends Controller
                 'is_featured' => 1,
                 'featured_exp_date' => $currentDate->addDays(7)
             ]);
+
+            DB::commit();
             
             return response([
                 'data' => $data,
@@ -523,7 +525,7 @@ class PaymentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-
+            DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
