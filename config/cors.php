@@ -12,10 +12,10 @@ return [
     | in web browsers. You are free to adjust these settings as needed.
     |
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
+    |  'sanctum/csrf-cookie'
     */
 
-    'paths' => ['api/*', 'admin-api/*',  'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'admin-api/*'],
 
     'allowed_methods' => ['*'],
 
