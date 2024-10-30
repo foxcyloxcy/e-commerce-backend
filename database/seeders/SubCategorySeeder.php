@@ -32,6 +32,7 @@ class SubCategorySeeder extends Seeder
         $men = collect([
             ["id" => 5, "category_id" => 2,"name" => "Clothes", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["id" => 6, "category_id" => 2, "name" => "Shoes", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["id" => 29, "category_id" => 2, "name" => "Bags",  "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["id" => 7, "category_id" => 2, "name" => "Accessories", "status" => 1, "created_at" => now(), "updated_at" => now()],
         ]); 
 

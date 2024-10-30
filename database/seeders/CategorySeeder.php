@@ -32,7 +32,7 @@ class CategorySeeder extends Seeder
 
         DB::table('categories')->insert([
             'id' => 3,
-            'name' => 'Baby and Childred'
+            'name' => 'Baby and Children'
         ]);
 
         DB::table('categories')->insert([
