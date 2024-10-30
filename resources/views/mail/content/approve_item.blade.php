@@ -20,7 +20,7 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                    <p>Exciting news - Your item has been Approved.</p>
+                    <p>Exciting news - your item has been approved.</p>
                 </td>
             </tr>
           

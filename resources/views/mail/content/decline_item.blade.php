@@ -20,13 +20,13 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                    <p>Your item has been Declined.</p>
+                    <p>Your item has been declined.</p>
                 </td>
             </tr>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
                     <p>Reason:</p>
-                    <p style="font-size: 18px !important">{{ $data->reject_reason }}</p>
+                    <p>{{ $data->reject_reason }}</p>
                 </td>
             </tr>
           
