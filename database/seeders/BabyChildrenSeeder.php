@@ -174,8 +174,6 @@ class BabyChildrenSeeder extends Seeder
         ]);
 
         $girlsClothesOptionData = collect([
-            ["sub_category_property_id" => $girlsClothesOption, "name" => "Babygrows", "status" => 1, "created_at" => now(), "updated_at" => now()],
-            ["sub_category_property_id" => $girlsClothesOption, "name" => "Bibs", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $girlsClothesOption, "name" => "T-shirts and Shirts", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $girlsClothesOption, "name" => "Trousers & Leggings", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $girlsClothesOption, "name" => "Coords", "status" => 1, "created_at" => now(), "updated_at" => now()],
@@ -316,8 +314,6 @@ class BabyChildrenSeeder extends Seeder
         ]);
 
         $boysClothesOptionData = collect([
-            ["sub_category_property_id" => $boysClothesOption, "name" => "Babygrows", "status" => 1, "created_at" => now(), "updated_at" => now()],
-            ["sub_category_property_id" => $boysClothesOption, "name" => "Bibs", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $boysClothesOption, "name" => "T-shirts and Shirts", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $boysClothesOption, "name" => "Trousers & Leggings", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $boysClothesOption, "name" => "Coords", "status" => 1, "created_at" => now(), "updated_at" => now()],
@@ -458,8 +454,6 @@ class BabyChildrenSeeder extends Seeder
         ]);
 
         $teenageGirlsClothesOptionData = collect([
-            ["sub_category_property_id" => $teenageGirlsClothesOption, "name" => "Babygrows", "status" => 1, "created_at" => now(), "updated_at" => now()],
-            ["sub_category_property_id" => $teenageGirlsClothesOption, "name" => "Bibs", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageGirlsClothesOption, "name" => "T-shirts and Shirts", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageGirlsClothesOption, "name" => "Trousers & Leggings", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageGirlsClothesOption, "name" => "Coords", "status" => 1, "created_at" => now(), "updated_at" => now()],
@@ -598,8 +592,6 @@ class BabyChildrenSeeder extends Seeder
         ]);
 
         $teenageBoysClothesOptionData = collect([
-            ["sub_category_property_id" => $teenageBoysClothesOption, "name" => "Babygrows", "status" => 1, "created_at" => now(), "updated_at" => now()],
-            ["sub_category_property_id" => $teenageBoysClothesOption, "name" => "Bibs", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageBoysClothesOption, "name" => "T-shirts and Shirts", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageBoysClothesOption, "name" => "Trousers & Leggings", "status" => 1, "created_at" => now(), "updated_at" => now()],
             ["sub_category_property_id" => $teenageBoysClothesOption, "name" => "Coords", "status" => 1, "created_at" => now(), "updated_at" => now()],

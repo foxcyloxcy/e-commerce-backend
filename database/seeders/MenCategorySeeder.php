@@ -457,6 +457,49 @@ class MenCategorySeeder extends Seeder
 
         SubCategoryPropertyValue::insert($accessoriesConditionData->toArray());
 
+        /**
+         * Bags
+         */
+
+        // for category/bags option
+        $bagsOption = DB::table('sub_category_properties')->insertGetId([
+            "sub_category_id" => 29,
+            "name" => "Categories", 
+            "status" => 1,
+            "created_at" => now(),
+            "updated_at" => now()
+        ]);
+
+        $bagsOptionData = collect([
+            ["sub_category_property_id" => $bagsOption, "name" => "Clutch Bag", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsOption, "name" => "Handbag", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsOption, "name" => "Travel Bags", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsOption, "name" => "Purses", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsOption, "name" => "Sport ", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsOption, "name" => "Other ", "status" => 1, "created_at" => now(), "updated_at" => now()]
+        ]);
+
+        SubCategoryPropertyValue::insert($bagsOptionData->toArray());
+
+        // for bags condition
+        $bagsCondition = DB::table('sub_category_properties')->insertGetId([
+            "sub_category_id" => 29,
+            "name" => "Condition", 
+            "status" => 1,
+            "created_at" => now(),
+            "updated_at" => now()
+        ]);
+
+        $bagsConditionData = collect([
+            ["sub_category_property_id" => $bagsCondition, "name" => "New with labels", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsCondition, "name" => "New without labels", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsCondition, "name" => "Pre-loved good condition", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsCondition, "name" => "Pre-loved with defects", "status" => 1, "created_at" => now(), "updated_at" => now()],
+            ["sub_category_property_id" => $bagsCondition, "name" => "Pre-loved frequently used", "status" => 1, "created_at" => now(), "updated_at" => now()],
+        ]);
+
+        SubCategoryPropertyValue::insert($bagsConditionData->toArray());
+
         
     }
 }
