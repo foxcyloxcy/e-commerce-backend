@@ -83,7 +83,7 @@ class ItemController extends Controller
 
             // check if user has valid bank details
             if(empty($user->vendorBank)){
-                return response(['message' => 'To receive payment for your items please provide bank details by visiting yourv profile. Once updated you can sell your items.'], 400);
+                return response(['message' => 'To receive payment for your items please provide bank details by visiting your profile. Once updated you can sell your items.'], 400);
             }
 
             $item = Item::create($param);
