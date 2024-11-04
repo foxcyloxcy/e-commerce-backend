@@ -31,6 +31,7 @@ Route::post('sign-up', [\App\Http\Controllers\AuthController::class, 'signUp']);
 Route::post('verify', [\App\Http\Controllers\AuthController::class, 'verifyUser']);
 Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgotPassword']);
 Route::post('set-forgot-password', [\App\Http\Controllers\AuthController::class, 'setNewPassword']);
+Route::post('resend-verification', [\App\Http\Controllers\AuthController::class, 'resendVerificationCode']);
 
 // WebHook
 Route::post('webhook/mamopay', [\App\Http\Controllers\MamoPayWebHookController::class, 'handle']);

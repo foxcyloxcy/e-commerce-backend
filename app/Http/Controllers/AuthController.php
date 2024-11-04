@@ -10,6 +10,7 @@ use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Requests\User\ChangePasswordRequest;
 use App\Http\Requests\User\ForgotPasswordRequest;
 use App\Http\Requests\User\SetNewPasswordRequest;
+use App\Http\Requests\User\ResendVerificationCodeRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Vendor;
@@ -292,6 +293,44 @@ class AuthController extends Controller
                 $user->update();
                 DB::commit();
                 return response(['data' =>  $user, 'message' => 'Password was successfully changed.'], 200);
+            }
+
+            return response(['message' =>  "Something went wrong!"], 400);
+         } catch (\Exception $e) {
+             //Rollback Changes
+             DB::rollback();
+ 
+             return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function resendVerificationCode(ResendVerificationCodeRequest $request)
+    {
+         #Validate
+         $form = $request->validated();
+
+         DB::beginTransaction();
+ 
+         try {
+            //get user by email address
+            $user = User::where('email', $form['email'])->first();
+
+            if(!empty($user)){
+                //update active code to this user to inactive
+                $updateAll = VerificationCode::where('is_success', 0)->where('user_id', $user->id)->update(['is_success' => 1]);
+
+                //send new code
+                $code = rand(100000, 999999); // 6 digits
+                VerificationCode::create([
+                    'user_id' => $user->id,
+                    'code' => $code,
+                    'expired_at' => Carbon::now()->addMinutes(5),
+                ]);
+
+                DB::commit();
+
+                return response(['message' =>  "Code successfully resend"], 200);
+
             }
 
             return response(['message' =>  "Something went wrong!"], 400);
