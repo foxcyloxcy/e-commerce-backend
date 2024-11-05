@@ -24,6 +24,7 @@ class StoreItemRequest extends FormRequest
     public function rules()
     {
         return [
+            'imgs' => 'array|required',
             'item_name' => 'required|string',
             'item_description' => 'nullable|string',
             'sub_category_id' => 'required|int',
