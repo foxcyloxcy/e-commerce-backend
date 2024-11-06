@@ -329,6 +329,9 @@ class AuthController extends Controller
 
                 DB::commit();
 
+                // notify user            
+                $user->notify(new UserVerificationNotification($code));
+
                 return response(['message' =>  "Code successfully resend"], 200);
 
             }
