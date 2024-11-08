@@ -48,6 +48,9 @@ return [
 
         'ses' => [
             'transport' => 'ses',
+            'options' => [
+                'region' => env('SES_REGION', 'ap-northeast-1'), // specify the SES region here
+            ],
         ],
 
         'postmark' => [
