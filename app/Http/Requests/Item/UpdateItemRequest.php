@@ -26,7 +26,8 @@ class UpdateItemRequest extends FormRequest
         return [
             'item_name' => 'required|string',
             'item_description' => 'nullable|string',
-            'address' => 'nullable|string'
+            'address' => 'nullable|string',
+            'price' => 'required|numeric',
         ];
     }
 
