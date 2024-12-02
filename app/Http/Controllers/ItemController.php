@@ -55,6 +55,13 @@ class ItemController extends Controller
                     $q->whereBetween('price', [$request->filter['min_price'], $request->filter['max_price']]);
                 }
             })
+            ->when(!empty($request->sort), function ($q) use ($request) {
+                if ($request->sort == 1) {
+                    $q->orderBy('created_at', 'desc');
+                } elseif ($request->sort == 2) {
+                    $q->orderBy('created_at', 'asc');
+                }
+            })
             ->paginate($size);
 
             return response(['data' =>  $data], 200);
