@@ -223,7 +223,7 @@ class PaymentController extends Controller
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
                     'title' => $item->item_name,
-                    'description' => $item->item_description,
+                    'description' => $item->item_name,
                     'capacity' => 1,
                     'active' => true,
                     'return_url' => 'https://www.therelovedmarketplace.com/payment-success',
