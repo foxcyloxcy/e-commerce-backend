@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 use App\Notifications\PaymentReceiveNotification;
+use App\Notifications\ItemSoldNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -387,6 +388,10 @@ class PaymentController extends Controller
             // get buyer and send email notif
             $user = User::where('id',$data['custom_data']['user_id'])->first();
             $user->notify(new PaymentReceiveNotification($item));
+
+            // get seller and send email notif
+            $seller = User::where('id',$data['custom_data']['seller_id'])->first();
+            $seller->notify(new ItemSoldNotification());
 
             DB::commit();
 
