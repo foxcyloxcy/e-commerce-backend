@@ -32,9 +32,9 @@ class ItemController extends Controller
 
         try {
             $data = Item::with('user')->where('status', Item::STATUS_PUBLISHED)
-            ->when(auth('auth-api')->check(), function ($q) use ($request) {
-                $q->where('user_id', "!=", auth('auth-api')->user()->id);
-            })
+            // ->when(auth('auth-api')->check(), function ($q) use ($request) {
+            //     $q->where('user_id', "!=", auth('auth-api')->user()->id);
+            // })
             ->when(!empty($request->sub_category_id), function ($q) use ($request) {
                 $q->where('sub_category_id', $request->sub_category_id);
             })
