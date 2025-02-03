@@ -34,6 +34,23 @@ class ItemImage extends Model
         'updated_at' => 'datetime'
     ];
 
+    /**
+     * Append Attribute
+     */
+    protected $appends = [
+        'image_url',
+    ];
+
+
+    public function getImageUrlAttribute()
+    {
+        return str_replace(
+            'https://reloved-prod.s3.eu-west-1.amazonaws.com/',
+            'https://d8jhzix2pgo8p.cloudfront.net/',
+            $this->attributes['image_url']
+        );
+    }
+
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class, 'id');
