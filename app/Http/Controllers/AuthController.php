@@ -46,6 +46,7 @@ class AuthController extends Controller
 
         try {
             $credentials = $request->only($field, 'password');
+            $credentials['status'] = 1;
 
             // validate credentials
             if (Auth::attempt($credentials, true)) {
