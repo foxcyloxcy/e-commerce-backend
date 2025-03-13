@@ -35,27 +35,30 @@ class ItemController extends Controller
             // ->when(auth('auth-api')->check(), function ($q) use ($request) {
             //     $q->where('user_id', "!=", auth('auth-api')->user()->id);
             // })
-            ->when(!empty($request->sub_category_id), function ($q) use ($request) {
+            ->when(isset($request->sub_category_id), function ($q) use ($request) {
                 $q->where('sub_category_id', $request->sub_category_id);
             })
-            ->when(!empty($request->filter['properties']), function ($q) use ($request) {
+            ->when(isset($request->filter['properties']), function ($q) use ($request) {
                 $q->whereHas('itemProperty', function ($q1) use ($request) {
                     $q1->whereIn('sub_property_value_id', explode(',',$request->filter['properties']));
                 });
             })
-            ->when(!empty($request->filter['keyword']), function ($q) use ($request) {
+            ->when(isset($request->filter['keyword']), function ($q) use ($request) {
                 $q->where('item_name','LIKE','%'.$request->filter['keyword'].'%');
             })
-            ->when(!empty($request->filter['min_price']) || !empty($request->filter['max_price']), function ($q) use ($request) {
-                if(!empty($request->filter['min_price']) && empty($request->filter['max_price'])){
-                    $q->where('price', '>=', $request->filter['min_price']);
-                }elseif(empty($request->filter['min_price']) && !empty($request->filter['max_price'])){
-                    $q->where('price', '<=', $request->filter['max_price']);
-                }else{
-                    $q->whereBetween('price', [$request->filter['min_price'], $request->filter['max_price']]);
+            ->when(isset($request->filter['min_price']) || isset($request->filter['max_price']), function ($q) use ($request) {
+                $minPrice = isset($request->filter['min_price']) ? (float) $request->filter['min_price'] : null;
+                $maxPrice = isset($request->filter['max_price']) ? (float) $request->filter['max_price'] : null;
+            
+                if ($minPrice !== null && $maxPrice === null) {
+                    $q->where('price', '>=', $minPrice);
+                } elseif ($minPrice === null && $maxPrice !== null) {
+                    $q->where('price', '<=', $maxPrice);
+                } elseif ($minPrice !== null && $maxPrice !== null) {
+                    $q->whereBetween('price', [$minPrice, $maxPrice]);
                 }
             })
-            ->when(!empty($request->sort), function ($q) use ($request) {
+            ->when(isset($request->sort), function ($q) use ($request) {
                 if ($request->sort == 1) {
                     $q->orderBy('created_at', 'desc');
                 } elseif ($request->sort == 2) {
