@@ -39,8 +39,14 @@ class ItemController extends Controller
                 $q->where('sub_category_id', $request->sub_category_id);
             })
             ->when(isset($request->filter['properties']), function ($q) use ($request) {
-                $q->whereHas('itemProperty', function ($q1) use ($request) {
-                    $q1->whereIn('sub_property_value_id', explode(',',$request->filter['properties']));
+                $subPropertyValueIds = explode(',', $request->filter['properties']);
+                
+                // Use whereHas to filter items based on item_property relationships
+                $q->whereHas('itemProperty', function ($q1) use ($subPropertyValueIds) {
+                    $q1->whereIn('sub_property_value_id', $subPropertyValueIds)
+                        // Ensure only the items with exactly these properties are returned
+                        ->groupBy('item_id')
+                        ->havingRaw('COUNT(DISTINCT sub_property_value_id) = ?', [count($subPropertyValueIds)]);
                 });
             })
             ->when(isset($request->filter['keyword']), function ($q) use ($request) {
@@ -66,6 +72,8 @@ class ItemController extends Controller
                 }
             })
             ->paginate($size);
+
+            
 
             return response(['data' =>  $data], 200);
 
