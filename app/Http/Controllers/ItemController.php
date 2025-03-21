@@ -45,6 +45,7 @@ class ItemController extends Controller
                 $q->whereHas('itemProperty', function ($q1) use ($subPropertyValueIds) {
                     $q1->whereIn('sub_property_value_id', $subPropertyValueIds)
                         // Ensure only the items with exactly these properties are returned
+                        ->select('item_id')
                         ->groupBy('item_id')
                         ->havingRaw('COUNT(DISTINCT sub_property_value_id) = ?', [count($subPropertyValueIds)]);
                 });
