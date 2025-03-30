@@ -38,7 +38,8 @@ class Transaction extends Model
         'discount_amount_percentage',
         'discount_amount',
         'total_amount',
-        'status'
+        'status',
+        'metadata'
     ];
 
     /**
