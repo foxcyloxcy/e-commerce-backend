@@ -16,9 +16,14 @@ use Illuminate\Http\Request;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 use App\Notifications\PaymentReceiveNotification;
+use App\Notifications\PaymentReceivedNonAuth;
 use App\Notifications\ItemSoldNotification;
+use App\Notifications\ItemSoldNonAuth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Notifiable;
 
 class PaymentController extends Controller
 {
@@ -534,5 +539,265 @@ class PaymentController extends Controller
             return response(['message' => $e->getMessage()], 400);
         }
     }
+
+    public function checkoutNonAuth(Request $request,Item $item)
+    {
+        // $user = auth('auth-api')->user();
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            if(($item->status != Item::STATUS_PUBLISHED) && ($item->status != Item::STATUS_BID_ACCEPTED)){
+                return response(['message' => 'Please try again!'], 401);
+            }
+
+            if(!empty($request->discount)){
+                //check discount if exist
+                // $discount = Discount::where('code', $request->discount)->where('status', 0)->first();
+                $discount = DiscountCode::where('code', $request->discount)->where('status', 1)->first();
+                if(!empty($discount)){ // if valid
+                    
+                    if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                        $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                        $asking_price = $offer->asking_price ;
+                        $discount_percentage = $discount->discount_percentage;
+                        $fees = ($asking_price * $discount->discount_percentage) / 100;
+                        $total = $asking_price + $fees;
+                        $payout_share = round(($offer->asking_price / $total) * 100);
+
+                    }else{
+                        $discount_percentage = $discount->discount_percentage;
+                        $fees = ($item->price * $discount->discount_percentage) / 100;
+                        $total = $item->price + $fees;
+                        $payout_share = round(($item->price / $total) * 100);
+                        
+                    }
+
+                    
+                }else {
+                    return response(['message' => 'Discount code is Invalid.'], 401);
+                }
+            }else{
+                
+                if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                    $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                    
+                    $discount_percentage = $item->total_fee_breakdown['platform_fee_percentage_value'];
+                    $asking_price = $offer->asking_price ;
+                    $fees = ($asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                    $total = $asking_price + $fees;
+                    $payout_share = round(($asking_price / $total) * 100);
+
+                }else{
+                    $discount_percentage = $item->total_fee_breakdown['platform_fee_percentage_value'];
+                    $fees = ($item->price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                    $total = $item->total_fee_breakdown['total'];
+                    $payout_share = round(($item->price / $total) * 100);
+                    
+                }     
+
+            }
+
+
+            $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
+                'json' => [
+                    'title' => $item->item_name,
+                    'description' => $item->item_name,
+                    'capacity' => 1,
+                    'active' => true,
+                    'return_url' => 'https://www.therelovedmarketplace.com/payment-success',
+                    'failure_return_url' => 'https://www.therelovedmarketplace.com/payment-failed',
+                    'processing_fee_percentage' => 0,
+                    'amount' => $total,
+                    'amount_currency' => 'AED',
+                    'link_type' => 'standalone',
+                    'enable_tabby' => false,
+                    'enable_message' => false,
+                    'enable_tips' => false,
+                    'save_card' => 'off',
+                    'enable_customer_details' => true,
+                    'enable_quantity' => false,
+                    'enable_qr_code' => false,
+                    'send_customer_receipt' => true,
+                    'hold_and_charge_later' => false,
+                    'custom_data' => [
+                        'uuid' => $item->uuid,
+                        'user_id' => 0,
+                        'seller_id' => $item->user_id,
+                        'discount' => $request->discount, //discount code
+                    ],
+                ],
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+            $data = json_decode($response->getBody(), true);
+
+            return response([
+                'data' => $data,
+                'message' => 'Checkout ready',
+            ]);
+        } catch (\Exception $e) {
+            return response(['message' => $e->getMessage()], 400);
+        }
+       
+
+    }
+
+    /**
+     * Save Successfull Transaction non-auth
+     */
+    public function saveSuccessTransactionNonAuth(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            
+            $client = new \GuzzleHttp\Client();
+            
+            $response = $client->request('GET', env('MAMOPAY_URL') . '/links/'.$request->transaction_number, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            $charges = $data['charges'];
+            $customerDetails = $charges[0]['customer_details'];
+            
+            $item = Item::where('uuid', $data['custom_data']['uuid'])->first();
+            
+    
+            $discount_amount_percentage = 0;
+            $discount_amount = 0;
+            if(!empty($data['custom_data']['discount'])){
+                $discount = DiscountCode::where('code', $data['custom_data']['discount'])->where('status', 1)->first();
+                if(!empty($discount)){
+                    $discount_amount_percentage = $discount->discount_percentage;
+                    
+                    if($item->status == Item::STATUS_BID_ACCEPTED){
+                        $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                        $discount_amount = ($offer->asking_price * $discount->discount_percentage) / 100;
+                    }else{
+                        $discount_amount = ($item->price * $discount->discount_percentage) / 100;
+                    }
+
+                    $discount->update([
+                        'used' => $discount->used + 1
+                    ]);
+
+                    Discount::create([
+                        'user_id' => $data['custom_data']['user_id'],
+                        'code' => $discount->code,
+                        'discount_percentage' => $discount->discount_percentage,
+                        'status' => 1
+                    ]);
+                }
+            }
+
+            $shared_amount = $item->price;
+            $platform_fee = ($item->price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;;
+            if ($item->status == Item::STATUS_BID_ACCEPTED) {
+                $offer = ItemBidding::where('seller_id', $item->user_id)->where('item_id', $item->id)->where('buyer_id', auth('auth-api')->user()->id)->where('is_accepted', 1)->first();
+                $shared_amount = $offer->asking_price ;
+                $platform_fee = ($offer->asking_price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
+                
+
+            }
+
+            $transaction = Transaction::create([
+                'transaction_number' => $request->transaction_number,
+                'payment_ref' => $request->payment_ref,
+                'user_id' => 0,
+                'seller_id' => $data['custom_data']['seller_id'],
+                'items_quantity' => 1,
+                'service_fee_percentage' => $item->total_fee_breakdown['platform_fee_percentage_value'],
+                'service_fee_amount' => $platform_fee,
+                'discount_amount_percentage' => $discount_amount_percentage,
+                'discount_amount' => $discount_amount,
+                'subtotal_amount' => $data['amount'],
+                'total_amount' => $data['amount'],
+                'status' => 1, // paid (default)
+                'metadata' => json_encode([
+                    'customer_details' => [
+                        'name' => $customerDetails['name'],
+                        'email' => $customerDetails['email']  ,
+                        'phone' => $customerDetails['phone_number'], 
+                    ]
+                ]) 
+            ]);
+
+            TransactionItem::create([
+                'transaction_id' => $transaction->id,
+                'item_id' => $item->id,
+            ]);
+
+            $item->update(['status' => Item::STATUS_SOLD]);
+
+            $payout = $client->request('POST', env('MAMOPAY_URL').'/disbursements', [
+                'json' => [
+                    'disbursements' => [
+                        [
+                            'first_name_or_business_name' => $item->user->first_name,
+                            'last_name' => $item->user->last_name,
+                            'account' => $item->user->vendorBank->iban,
+                            'transfer_method' => 'BANK_ACCOUNT',
+                            'reason' => 'Seller Payout',
+                            'amount' => $shared_amount,
+                        ]
+                    ],
+                ],
+                'headers' => [
+                  'Authorization' => 'Bearer ' . env('MAMOPAY_SECRET'),
+                  'accept' => 'application/json',
+                  'content-type' => 'application/json',
+                ],
+              ]);
+            $payoutData = json_decode($payout->getBody(), true); 
+            $transaction->update(['payout_ref' => $payoutData[0]['identifier']]);
+
+            $notifiable = new class($customerDetails['email'], $customerDetails['name']) {
+                use Notifiable;
+            
+                public $email;
+                public $name;
+            
+            
+                public function __construct($email, $name)
+                {
+                    $this->email = $email;
+                    $this->name = $name;
+                }
+            
+                public function routeNotificationFor($driver)
+                {
+                    // Return the email to send notifications to
+                    return $this->email;
+                }
+            };
+
+            $notifiable->notify(new PaymentReceivedNonAuth($item));
+           
+
+            // get seller and send email notif
+            $seller = User::where('id',$data['custom_data']['seller_id'])->first();
+            $seller->notify(new ItemSoldNotification());
+
+            DB::commit();
+
+            return response([
+                'data' => $transaction,
+                'message' => 'Successfully Paid.', // for indication only
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response(['message' => $e->getMessage()], 400);
+        }
+    }
+
 
 }

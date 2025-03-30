@@ -145,6 +145,13 @@ Route::group(['prefix' => 'global'], function () {
     Route::group(['prefix' => 'featured'], function () {
         Route::get('', [\App\Http\Controllers\ItemController::class, 'featured']);
     });
+
+    Route::group(['prefix' => 'payment'], function () {
+        Route::post('mamopay/checkout/{item}', [\App\Http\Controllers\PaymentController::class, 'checkoutNonAuth']);
+        Route::post('mamopay/transaction/success', [\App\Http\Controllers\PaymentController::class, 'saveSuccessTransactionNonAuth']);
+    });
+
+    
  });
 
 
