@@ -604,7 +604,7 @@ class PaymentController extends Controller
                     'description' => $item->item_name,
                     'capacity' => 1,
                     'active' => true,
-                    'return_url' => 'https://www.therelovedmarketplace.com/payment-success',
+                    'return_url' => 'https://www.therelovedmarketplace.com/visitor-payment-success',
                     'failure_return_url' => 'https://www.therelovedmarketplace.com/payment-failed',
                     'processing_fee_percentage' => 0,
                     'amount' => $total,
@@ -790,6 +790,7 @@ class PaymentController extends Controller
 
             return response([
                 'data' => $transaction,
+                'seller' => $transaction->seller,
                 'message' => 'Successfully Paid.', // for indication only
             ]);
 
