@@ -396,7 +396,7 @@ class PaymentController extends Controller
 
             // get seller and send email notif
             $seller = User::where('id',$data['custom_data']['seller_id'])->first();
-            $seller->notify(new ItemSoldNotification());
+            $seller->notify(new ItemSoldNotification($item));
 
             DB::commit();
 
@@ -784,7 +784,7 @@ class PaymentController extends Controller
 
             // get seller and send email notif
             $seller = User::where('id',$data['custom_data']['seller_id'])->first();
-            $seller->notify(new ItemSoldNotification());
+            $seller->notify(new ItemSoldNotification($item));
 
             DB::commit();
 

@@ -13,16 +13,16 @@ class ItemSoldNotification extends Notification
 
     protected $subject;
     protected $mailBlade;
-    // protected $data;
+    protected $data;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct($data)
     {
         $this->subject = env('APP_NAME') . ' Item Sold';
         $this->mailBlade = 'mail.content.item_sold_seller';
-        // $this->data = $data;
+        $this->data = $data;
     }
 
     /**
@@ -44,7 +44,7 @@ class ItemSoldNotification extends Notification
                     ->subject($this->subject)
                     ->view($this->mailBlade, [
                         'user' => $notifiable,
-                        // 'data' => $this->data
+                        'data' => $this->data
                     ]);
     }
 
