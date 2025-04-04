@@ -20,9 +20,11 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                     <p>Your payment is being processed for {{ $data->item_name }}, as the buyer you are responsible for collecting the item which you can coordinate with the seller. If you wish to use a reloved delivery partner you can contact reloved directly.
-                      We hope you enjoy the item, if you have any issues with this you can contact the seller directly. 
+                     <p>Your payment is being processed for {{ $data->item_name }}, as the buyer you are responsible for collecting the item which you can coordinate with the seller.</p><br>
+                     <p>If you wish to use a reloved delivery partner you can contact reloved directly.</p><br>
+                     <p>We hope you enjoy the item, if you have any issues with this you can contact the seller directly. 
                       Thank you for using the reloved platform.</p>
+                    <br>  
                     <hr>
                     <b>Seller Contact Details:</b>
                     <p>Name: {{$data->user->first_name}} {{$data->user->last_name}}</p>
