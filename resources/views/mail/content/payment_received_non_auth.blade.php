@@ -26,7 +26,7 @@
                       Thank you for using the reloved platform.</p>
                     <br>  
                     <hr>
-                    <b>Seller Contact Details:</b>
+                    <p>Seller Contact Details:</p>
                     <p>Name: {{$data->user->first_name}} {{$data->user->last_name}}</p>
                     <p>Email: {{$data->user->email}} </p>
                     <p>Contact Number: {{$data->user->mobile_number}}</p>
