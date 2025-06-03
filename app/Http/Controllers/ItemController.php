@@ -15,6 +15,9 @@ use App\Http\Resources\Item\ItemResource;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ItemImage;
 use App\Models\ItemComment;
+use Illuminate\Http\UploadedFile;
+
+
 
 class ItemController extends Controller
 {
@@ -113,19 +116,86 @@ class ItemController extends Controller
                     'sub_property_value_id' => $val
                 ]);
             }
-            if(!empty($request->file('imgs'))){
-                foreach($request->file('imgs') as $val){
-                    // Save the file in S3 Storage
-                    $path = Storage::putFile('items', $val);
-                    // Get the URL
-                    $url = Storage::url($path);
-                    // Save to database
+
+            if (!empty($request->file('imgs'))) {
+                $files = $request->file('imgs');
+                if (!is_array($files)) {
+                    $files = [$files];
+                }
+
+                foreach ($files as $val) {
+                    if (!$val instanceof UploadedFile || !$val->isValid()) {
+                        \Log::warning('Invalid or missing file upload.');
+                        continue;
+                    }
+
+                    $extension = strtolower($val->getClientOriginalExtension());
+                    
+                    if ($extension === 'heic') {
+                        
+                        try {
+                            // Convert HEIC to JPEG using Imagick
+                            $realPath = $val->getRealPath();
+                            if (!is_file($realPath)) {
+                                throw new \Exception("The uploaded file path is not a valid file: $realPath");
+                            }
+                            // Ensure Imagick is availab
+                            $imagick = new \Imagick();
+                            $imagick->readImage($val->getRealPath());
+                            $imagick->setImageFormat('jpeg');
+
+                            $finalTempPath = tempnam(sys_get_temp_dir(), 'heic_') . '.jpg';
+                            $imagick->writeImage($finalTempPath);
+                            $imagick->clear();
+                            $imagick->destroy();
+
+                            // Now upload $finalTempPath directly
+                            $convertedFile = new UploadedFile(
+                                $finalTempPath,
+                                pathinfo($val->getClientOriginalName(), PATHINFO_FILENAME) . '.jpg',
+                                'image/jpeg',
+                                null,
+                                true
+                            );
+
+                            $path = Storage::disk('s3')->putFile('items', $convertedFile);
+
+                            @unlink($finalTempPath);
+                            $url = Storage::disk('s3')->url($path);
+
+                            
+                        } catch (\Exception $e) {
+                            \Log::error("HEIC conversion failed: " . $e->getMessage());
+                            continue;
+                        }
+                    } else {
+                        // For JPEG, PNG, etc. — upload directly
+                        $path = Storage::disk('s3')->putFile('items', $val);
+                    }
+
+                    $url = Storage::disk('s3')->url($path);
+
                     ItemImage::create([
                         'item_id' => $item->id,
-                        'image_url' => $url
+                        'image_url' => $url,
                     ]);
                 }
             }
+            
+            // if(!empty($request->file('imgs'))){
+            //     foreach($request->file('imgs') as $val){
+            //         // Save the file in S3 Storage
+            //         $path = Storage::putFile('items', $val);
+            //         // Get the URL
+            //         $url = Storage::url($path);
+            //         // Save to database
+            //         ItemImage::create([
+            //             'item_id' => $item->id,
+            //             'image_url' => $url
+            //         ]);
+            //     }
+            // }
+            
           
             DB::commit();
 
