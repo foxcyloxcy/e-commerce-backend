@@ -20,6 +20,19 @@ class SubCategoryController extends Controller
         // return 's';
         try {
             $data = SubCategory::with('subCategoryProperty', 'subCategoryProperty.subCategoryPropertyValue')->where('category_id', $request->category_id)->where('status', 1)->get();
+            
+            // Sort only the subCategoryPropertyValue by name
+            $data->transform(function ($subCategory) {
+                $subCategory->subCategoryProperty->transform(function ($property) {
+                    // Sort the subCategoryPropertyValue collection by name
+                    $property->setRelation(
+                        'subCategoryPropertyValue',
+                        $property->subCategoryPropertyValue->sortBy('name')->values()
+                    );
+                    return $property;
+                });
+                return $subCategory;
+            });
 
             return response(['data' =>  $data], 200);
 
