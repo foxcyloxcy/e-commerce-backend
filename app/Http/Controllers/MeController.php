@@ -22,6 +22,7 @@ use App\Http\Resources\Me\MyOfferCollection;
 use Illuminate\Support\Arr;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
+use Illuminate\Http\UploadedFile;
 
 class MeController extends Controller
 {
@@ -168,47 +169,136 @@ class MeController extends Controller
 
     protected function uploadUserPhoto(UploadUserPhotoRequest $request)
     {
-        #Validate
         $param = $request->validated();
-        
         $user = auth()->user();
 
         DB::beginTransaction();
+
         try {
-            $path = Storage::putFile('profiles', $request->file('photo'));
+            $file = $request->file('photo');
+
+            if (!$file instanceof UploadedFile || !$file->isValid()) {
+                return response(['message' => 'Invalid photo upload.'], 400);
+            }
+
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            if ($extension === 'heic') {
+                try {
+                    $realPath = $file->getRealPath();
+                    if (!is_file($realPath)) {
+                        throw new \Exception("The uploaded file path is not valid: $realPath");
+                    }
+
+                    $imagick = new \Imagick();
+                    $imagick->readImage($realPath);
+                    $imagick->setImageFormat('jpeg');
+
+                    $finalTempPath = tempnam(sys_get_temp_dir(), 'heic_') . '.jpg';
+                    $imagick->writeImage($finalTempPath);
+                    $imagick->clear();
+                    $imagick->destroy();
+
+                    $convertedFile = new UploadedFile(
+                        $finalTempPath,
+                        pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.jpg',
+                        'image/jpeg',
+                        null,
+                        true
+                    );
+
+                    $path = Storage::disk('s3')->putFile('profiles', $convertedFile);
+                    @unlink($finalTempPath);
+
+                } catch (\Exception $e) {
+                    \Log::error("HEIC conversion failed: " . $e->getMessage());
+                    return response(['message' => 'Failed to convert HEIC image.'], 400);
+                }
+            } else {
+                // For JPEG, PNG, etc. — upload directly
+                $path = Storage::disk('s3')->putFile('profiles', $file);
+            }
+
             // Get the URL
-            $url = Storage::url($path);
+            $url = Storage::disk('s3')->url($path);
+
             $user->update(['photo' => $url]);
+
             DB::commit();
-            return response(['data' =>  $user, 'message' => 'Successfully Uploaded'], 200);
+            return response(['data' => $user, 'message' => 'Successfully Uploaded'], 200);
+
         } catch (\Exception $e) {
-            //Rollback Changes
             DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
 
-    protected function uploadVendorPhoto(UploadVendorPhotoRequest $request)
+
+   protected function uploadVendorPhoto(UploadVendorPhotoRequest $request)
     {
-        #Validate
         $param = $request->validated();
-        
         $user = auth()->user();
-        
+
         DB::beginTransaction();
+
         try {
-            $path = Storage::putFile('profiles', $request->file('logo'));
-            // Get the URL
-            $url = Storage::url($path);
+            $file = $request->file('logo');
+
+            if (!$file instanceof UploadedFile || !$file->isValid()) {
+                return response(['message' => 'Invalid logo upload.'], 400);
+            }
+
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            if ($extension === 'heic') {
+                try {
+                    $realPath = $file->getRealPath();
+                    if (!is_file($realPath)) {
+                        throw new \Exception("The uploaded file path is not valid: $realPath");
+                    }
+
+                    $imagick = new \Imagick();
+                    $imagick->readImage($realPath);
+                    $imagick->setImageFormat('jpeg');
+
+                    $finalTempPath = tempnam(sys_get_temp_dir(), 'heic_') . '.jpg';
+                    $imagick->writeImage($finalTempPath);
+                    $imagick->clear();
+                    $imagick->destroy();
+
+                    $convertedFile = new UploadedFile(
+                        $finalTempPath,
+                        pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.jpg',
+                        'image/jpeg',
+                        null,
+                        true
+                    );
+
+                    $path = Storage::disk('s3')->putFile('profiles', $convertedFile);
+                    @unlink($finalTempPath);
+
+                } catch (\Exception $e) {
+                    \Log::error("HEIC conversion failed: " . $e->getMessage());
+                    return response(['message' => 'Failed to convert HEIC image.'], 400);
+                }
+            } else {
+                // For JPEG, PNG, etc. — upload directly
+                $path = Storage::disk('s3')->putFile('profiles', $file);
+            }
+
+            $url = Storage::disk('s3')->url($path);
+
             $user->vendor->update(['logo' => $url]);
+
             DB::commit();
-            return response(['data' =>  $user, 'message' => 'Successfully Uploaded'], 200);
+            return response(['data' => $user, 'message' => 'Successfully Uploaded'], 200);
+
         } catch (\Exception $e) {
-            //Rollback Changes
             DB::rollback();
             return response(['message' => $e->getMessage()], 400);
         }
     }
+
 
     protected function myOffers(Request $request)
     {

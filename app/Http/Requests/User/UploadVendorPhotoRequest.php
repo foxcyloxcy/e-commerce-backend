@@ -24,7 +24,7 @@ class UploadVendorPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'logo' => 'required|image|max:10000'
+            'logo' => 'required'
         ];
     }
 
