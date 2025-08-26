@@ -30,7 +30,9 @@ class User extends Authenticatable
         'password',
         'address',
         'status',
-        'photo'
+        'photo',
+        'gender',
+        'date_of_birth',
     ];
 
     /**
@@ -59,7 +61,8 @@ class User extends Authenticatable
      */
     protected $appends = [
         'is_vendor',
-        'has_bank_details'
+        'has_bank_details',
+        'gender_text'
     ];
 
     /**
@@ -117,6 +120,16 @@ class User extends Authenticatable
     public function vendorBank(): HasOne
     {
         return $this->HasOne(VendorBank::class);
+    }
+
+    public function getGenderTextAttribute(): string
+    {
+        return match ($this->gender) {
+            1 => 'Male',
+            2 => 'Female',
+            0, null => 'N/A',
+            default => 'Unknown',
+        };
     }
 
 }

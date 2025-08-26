@@ -30,6 +30,8 @@ class UpdateUserDetailsRequest extends FormRequest
             'mobile_number' => 'sometimes|required|unique:users,mobile_number,'.auth()->user()->id,
             'name' => 'sometimes|required|string', //vendor name
             'address' => 'sometimes|required|string', // vendor address
+            'gender' => 'nullable|integer',
+            'date_of_birth' => 'nullable|date',
         ];
     }
 
