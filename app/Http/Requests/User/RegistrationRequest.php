@@ -28,7 +28,9 @@ class RegistrationRequest extends FormRequest
             'last_name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'mobile_number' => 'required|unique:users,mobile_number',
-            'password' => 'required|confirmed|min:6|max:25'
+            'password' => 'required|confirmed|min:6|max:25',
+            'gender' => 'nullable|integer',
+            'date_of_birth' => 'nullable|date',
         ];
     }
 
