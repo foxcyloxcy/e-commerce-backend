@@ -20,7 +20,9 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                     <p>You have received a public question on your item {{ $data->item_name }} please visit this item to respond to the potential buyer. </p>
+                     <p>You have received a public question on your item <a href="https://www.therelovedmarketplace.com/product-details/{{ $data->uuid }}" style="color: #1a0dab; text-decoration: underline;">
+                             {{ $data->item_name }}
+                         </a> please visit this item to respond to the potential buyer. </p>
                 </td>
             </tr>
           
