@@ -9,30 +9,31 @@ use Illuminate\Mail\Transport\SesTransport;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
-        //
+        $this->app->singleton(SesClient::class, function () {
+            $key = env('AWS_ACCESS_KEY_ID');
+            $secret = env('AWS_SECRET_ACCESS_KEY');
+
+            if (!$key || !$secret) {
+                throw new \RuntimeException('AWS credentials missing.');
+            }
+
+            return new SesClient([
+                'version'     => 'latest',
+                'region'      => env('AWS_DEFAULT_REGION', 'ap-northeast-1'),
+                'credentials' => [
+                    'key'    => $key,
+                    'secret' => $secret,
+                ],
+            ]);
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+    public function boot()
     {
-        $sesClient = new SesClient([
-            'version' => 'latest',
-            'region'  => 'ap-northeast-1', // Explicitly force Tokyo region for SES
-            'credentials' => [
-                'key'    => env('AWS_ACCESS_KEY_ID'),
-                'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            ],
-        ]);
-    
-        Mail::extend('ses', function() use ($sesClient) {
-            return new SesTransport($sesClient);
+        Mail::extend('ses', function () {
+            return new SesTransport($this->app->make(SesClient::class));
         });
     }
 }
