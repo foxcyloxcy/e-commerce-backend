@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
 
             return new SesClient([
                 'version'     => 'latest',
-                'region'      => env('AWS_DEFAULT_REGION', 'ap-northeast-1'),
+                'region'      => env('AWS_DEFAULT_REGION', 'eu-west-1'),
                 'credentials' => [
                     'key'    => $key,
                     'secret' => $secret,
