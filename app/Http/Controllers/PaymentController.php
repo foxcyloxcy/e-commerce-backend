@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
@@ -220,16 +221,16 @@ class PaymentController extends Controller
                     $fees = ($item->price * $item->total_fee_breakdown['platform_fee_percentage_value']) / 100;
                     $total = $item->total_fee_breakdown['total'];
                     $payout_share = round(($item->price / $total) * 100);
-                    
-                }     
+
+                }
 
             }
 
 
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
-                    'title' => $item->item_name,
-                    'description' => $item->item_name,
+                    'title' => mb_substr($item->item_name, 0, 50),
+                    'description' => mb_substr($item->item_name, 0, 50),
                     'capacity' => 1,
                     'active' => true,
                     'return_url' => 'https://www.therelovedmarketplace.com/payment-success',
@@ -452,7 +453,7 @@ class PaymentController extends Controller
 
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
-                    'title' => $item->item_name,
+                    'title' => mb_substr($item->item_name, 0, 50),
                     'description' => 'Featured Product Payment',
                     'capacity' => 1,
                     'active' => true,
@@ -600,8 +601,8 @@ class PaymentController extends Controller
 
             $response = $client->request('POST', env('MAMOPAY_URL') . '/links', [
                 'json' => [
-                    'title' => $item->item_name,
-                    'description' => $item->item_name,
+                    'title' => mb_substr($item->item_name, 0, 50),
+                    'description' => mb_substr($item->item_name, 0, 50),
                     'capacity' => 1,
                     'active' => true,
                     'return_url' => 'https://www.therelovedmarketplace.com/visitor-payment-success',
