@@ -20,7 +20,9 @@
     <tbody>
             <tr>
                 <td style="padding: 10px; font-size: 20px !important;">
-                    <p>Your offer has been accepted on the {{$data->item_name}} item, you can now go to your profile, pending bids and pay for this item. Once the item has been paid you will receive the sellers details for arranging collection. Thank you for using the reloved platform!</p>
+                    <p>Your offer has been accepted on the {{$data->item_name}} item, you can now go to your <a href="https://www.therelovedmarketplace.com/my-profile/" style="color: #1a0dab; text-decoration: underline;">
+                             profile
+                         </a>, pending bids and pay for this item. Once the item has been paid you will receive the sellers details for arranging collection. Thank you for using the reloved platform!</p>
                 </td>
             </tr>
           
