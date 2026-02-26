@@ -20,7 +20,7 @@ Route::get('/test', function () {
     return 'Api works!';
 });
 
-Route::post('user_lead', [NewUserLeadsController::class, 'user_lead']);
+Route::post('user-lead', [NewUserLeadsController::class, 'save_email']);
 
 // test notification
 Route::group(['prefix' => 'notification'], function () {
