@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NewUserLeadsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/test', function () {
     return 'Api works!';
 });
+
+Route::post('user_lead', [NewUserLeadsController::class, 'user_lead']);
 
 // test notification
 Route::group(['prefix' => 'notification'], function () {
