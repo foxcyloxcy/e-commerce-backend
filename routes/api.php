@@ -17,7 +17,7 @@ use App\Http\Controllers\NewUserLeadsController;
 
 // test api
 Route::get('/test', function () {
-    return 'Api works!';
+    return 'New Api works!';
 });
 
 Route::get('/test-user-lead', function () {
