@@ -20,6 +20,10 @@ Route::get('/test', function () {
     return 'Api works!';
 });
 
+Route::get('/test-user-lead', function () {
+    return 'user lead is working';
+});
+
 Route::post('user-lead', [NewUserLeadsController::class, 'save_email']);
 
 // test notification
