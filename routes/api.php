@@ -25,6 +25,7 @@ Route::get('/test-user-lead', function () {
 });
 
 Route::post('user-lead', [NewUserLeadsController::class, 'save_email']);
+Route::get('user-leads', [NewUserLeadsController::class, 'get_user_leads']);
 
 // test notification
 Route::group(['prefix' => 'notification'], function () {
