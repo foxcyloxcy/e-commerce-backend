@@ -25,7 +25,7 @@ class NewUserLeadsController extends Controller
         if($exists)
         {
             return response()->json([
-                'status'=>true,
+                'status'=>false,
                 'message'=>'Email already saved'
             ]);
         }
