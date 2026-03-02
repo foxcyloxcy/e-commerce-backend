@@ -25,7 +25,11 @@ Route::get('/test-user-lead', function () {
 });
 
 Route::post('user-lead', [NewUserLeadsController::class, 'save_email']);
-Route::get('user-leads', [NewUserLeadsController::class, 'get_user_leads']);
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/users', [NewUserLeadsController::class, 'get_user_leads']);
+
+});
 
 // test notification
 Route::group(['prefix' => 'notification'], function () {
