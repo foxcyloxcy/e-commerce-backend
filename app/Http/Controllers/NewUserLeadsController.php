@@ -44,23 +44,18 @@ class NewUserLeadsController extends Controller
     }
 
 
-    public function get_user_leads()
+    public function get_user_leads(Request $request)
     {
-
         $leads = NewUserLeads::select(
             'first_name',
             'last_name',
             'email',
             'created_at'
         )
-        ->orderBy('created_at','desc')
-        ->get();
+        ->orderBy('created_at', 'desc')
+        ->paginate(10); // <-- IMPORTANT
 
-        return response()->json([
-            'status'=>true,
-            'data'=>$leads
-        ]);
-
+        return response()->json($leads);
     }
 
 }
