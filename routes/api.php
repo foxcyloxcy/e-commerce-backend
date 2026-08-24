@@ -77,6 +77,10 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('profile/vendor', [\App\Http\Controllers\MeController::class, 'updateVendor']);
             #Items
             Route::get('items', [\App\Http\Controllers\MeController::class, 'items']);
+
+            #Reloved to Taggy migration consent
+            Route::get('migration-consent', [\App\Http\Controllers\MigrationConsentController::class, 'show']);
+            Route::post('migration-consent', [\App\Http\Controllers\MigrationConsentController::class, 'store']);
             #Payments
             Route::get('bank-payment', [\App\Http\Controllers\MeController::class, 'userBankList']);
             Route::post('bank-payment', [\App\Http\Controllers\MeController::class, 'addUserBank']);
