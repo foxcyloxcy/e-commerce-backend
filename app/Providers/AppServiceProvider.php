@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Mail;
 use Aws\Ses\SesClient;
 use Illuminate\Mail\Transport\SesTransport;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,16 +23,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $sesClient = new SesClient([
-            'version' => 'latest',
-            'region'  => 'ap-northeast-1', // Explicitly force Tokyo region for SES
-            'credentials' => [
-                'key'    => env('AWS_ACCESS_KEY_ID'),
-                'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            ],
-        ]);
+        Mail::extend('ses', function() {
+            $key = config('services.ses.key');
+            $secret = config('services.ses.secret');
 
-        Mail::extend('ses', function() use ($sesClient) {
+            if (empty($key) || empty($secret)) {
+                throw new RuntimeException('AWS SES credentials are not configured. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env.');
+            }
+
+            $sesClient = new SesClient([
+                'version' => 'latest',
+                'region'  => config('services.ses.region', 'ap-northeast-1'),
+                'credentials' => [
+                    'key'    => $key,
+                    'secret' => $secret,
+                ],
+            ]);
+
             return new SesTransport($sesClient);
         });
     }
