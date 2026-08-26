@@ -129,6 +129,18 @@ Route::group(['middleware' => 'auth:auth-api'], function () {
             Route::post('validate', [\App\Http\Controllers\DiscountController::class, 'validateDiscount']);
         });
 
+        #Reloved to Taggy migration
+        Route::group(['prefix' => 'migration'], function () {
+            Route::get('', [\App\Http\Controllers\MigrationController::class, 'show']);
+            Route::get('profile', [\App\Http\Controllers\MigrationController::class, 'profile']);
+            Route::patch('profile', [\App\Http\Controllers\MigrationController::class, 'updateProfile']);
+            Route::get('items', [\App\Http\Controllers\MigrationController::class, 'items']);
+            Route::patch('items', [\App\Http\Controllers\MigrationController::class, 'updateItems']);
+            Route::get('consent', [\App\Http\Controllers\MigrationController::class, 'consent']);
+            Route::post('decision', [\App\Http\Controllers\MigrationController::class, 'submitDecision']);
+            Route::get('confirmation', [\App\Http\Controllers\MigrationController::class, 'confirmation']);
+        });
+
         
 
     });
