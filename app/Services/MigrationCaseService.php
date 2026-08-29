@@ -9,6 +9,7 @@ use App\Models\MigrationItem;
 use App\Models\MigrationProfile;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -39,38 +40,84 @@ class MigrationCaseService
 
     public function ensureCaseFor(User $user): MigrationCase
     {
-        return DB::transaction(function () use ($user) {
-            $campaign = $this->activeCampaign();
-            $vendorId = DB::table('vendors')->where('user_id', $user->id)->value('id');
-            $now = now();
+        $campaign = $this->activeCampaign();
+        $vendorId = DB::table('vendors')->where('user_id', $user->id)->value('id');
+        $case = $this->resolveOrCreateCase($campaign, $user, $vendorId);
 
-            DB::table('migration_cases')->insertOrIgnore([
+        return DB::transaction(function () use ($case, $user, $vendorId) {
+            // Serialize draft snapshot initialization for this one canonical case.
+            // This locking read also avoids a stale repeatable-read snapshot after
+            // waiting for another request to finish initialization.
+            $lockedCase = MigrationCase::whereKey($case->id)->lockForUpdate()->first();
+            if (!$lockedCase) {
+                abort(response([
+                    'message' => 'The migration case could not be resolved for this account.',
+                    'code' => 'MIGRATION_CASE_INITIALIZATION_ERROR',
+                ], 409));
+            }
+
+            if ($this->isDraft($lockedCase)) {
+                $this->ensureProfileSnapshot($lockedCase, $user);
+                $this->ensureItemSnapshots($lockedCase, $user, $vendorId);
+            }
+
+            $lockedCase = $lockedCase->fresh(['campaign', 'profile', 'items', 'audits']);
+            $this->assertSnapshotIntegrity($lockedCase, $user);
+
+            return $lockedCase;
+        });
+    }
+
+    private function resolveOrCreateCase(MigrationCampaign $campaign, User $user, ?int $vendorId): MigrationCase
+    {
+        $case = MigrationCase::where('campaign_id', $campaign->id)
+            ->where('source_user_id', $user->id)
+            ->first();
+
+        if ($case) {
+            return $case;
+        }
+
+        $now = now();
+        try {
+            return MigrationCase::create([
                 'campaign_id' => $campaign->id,
                 'source_user_id' => $user->id,
                 'source_vendor_id' => $vendorId,
                 'status' => MigrationCase::STATUS_IN_PROGRESS,
                 'started_at' => $now,
                 'last_activity_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
             ]);
-
-            // The unique campaign/user key selects the one canonical row regardless
-            // of which concurrent request won the insert.
-            $case = MigrationCase::where('campaign_id', $campaign->id)
-                ->where('source_user_id', $user->id)
-                ->firstOrFail();
-
-            if ($this->isDraft($case)) {
-                $this->ensureProfileSnapshot($case, $user);
-                $this->ensureItemSnapshots($case, $user, $vendorId);
+        } catch (QueryException $exception) {
+            if (!$this->isMigrationCaseUniqueConflict($exception)) {
+                throw $exception;
             }
 
-            $case = $case->fresh(['campaign', 'profile', 'items', 'audits']);
-            $this->assertSnapshotIntegrity($case, $user);
+            // A duplicate insert returns only after the winning transaction releases
+            // its unique-key lock. Retry briefly in case visibility lags that commit.
+            for ($attempt = 0; $attempt < 3; $attempt++) {
+                $case = MigrationCase::where('campaign_id', $campaign->id)
+                    ->where('source_user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
 
-            return $case;
-        });
+                if ($case) {
+                    return $case;
+                }
+
+                if ($attempt < 2) {
+                    usleep(20000);
+                }
+            }
+
+            throw $exception;
+        }
+    }
+
+    private function isMigrationCaseUniqueConflict(QueryException $exception): bool
+    {
+        return (int) ($exception->errorInfo[1] ?? 0) === 1062
+            && str_contains($exception->getMessage(), 'migration_cases_campaign_user_unique');
     }
 
     public function isDraft(MigrationCase $case): bool
@@ -162,8 +209,12 @@ class MigrationCaseService
 
     private function ensureProfileSnapshot(MigrationCase $case, User $user): void
     {
+        if (MigrationProfile::where('migration_case_id', $case->id)->exists()) {
+            return;
+        }
+
         $now = now();
-        DB::table('migration_profiles')->insertOrIgnore([
+        DB::table('migration_profiles')->insert([
             'migration_case_id' => $case->id,
             'source_user_id' => $user->id,
             'first_name' => $user->first_name,
@@ -179,9 +230,6 @@ class MigrationCaseService
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-
-        // Fetching the canonical row also waits for any competing insert to finish.
-        MigrationProfile::where('migration_case_id', $case->id)->firstOrFail();
     }
 
     private function ensureItemSnapshots(MigrationCase $case, User $user, ?int $vendorId): void
@@ -220,7 +268,7 @@ class MigrationCaseService
         }
 
         if ($rows) {
-            DB::table('migration_items')->insertOrIgnore($rows);
+            DB::table('migration_items')->insert($rows);
         }
     }
 
