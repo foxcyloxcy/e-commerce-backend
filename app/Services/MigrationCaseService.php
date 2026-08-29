@@ -10,6 +10,7 @@ use App\Models\MigrationProfile;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MigrationCaseService
 {
@@ -53,28 +54,92 @@ class MigrationCaseService
                 ]
             );
 
-            if (!$case->submitted_at) {
+            if ($this->isDraft($case)) {
                 $case->fill([
                     'source_vendor_id' => $vendorId,
                     'status' => $case->status === MigrationCase::STATUS_PENDING ? MigrationCase::STATUS_IN_PROGRESS : $case->status,
                     'started_at' => $case->started_at ?: $now,
                     'last_activity_at' => $now,
                 ])->save();
+
+                // Draft-only repair. firstOrCreate preserves reviewed profile edits,
+                // item selections, and every existing source snapshot.
+                $this->ensureProfileSnapshot($case, $user);
+                $this->ensureItemSnapshots($case, $user, $vendorId);
             }
 
-            // Repair older/incomplete cases independently of case status. firstOrCreate
-            // preserves an existing migration draft and never writes back to Reloved.
-            $this->ensureProfileSnapshot($case, $user);
-            $this->ensureItemSnapshots($case, $user, $vendorId);
+            $case = $case->fresh(['campaign', 'profile', 'items', 'audits']);
+            $this->assertSnapshotIntegrity($case, $user);
 
-            return $case->fresh(['campaign', 'profile', 'items']);
+            return $case;
         });
+    }
+
+    public function isDraft(MigrationCase $case): bool
+    {
+        return !$case->submitted_at
+            && in_array($case->status, [MigrationCase::STATUS_PENDING, MigrationCase::STATUS_IN_PROGRESS], true)
+            && $case->derived_status !== MigrationCase::STATUS_NO_RESPONSE;
     }
 
     public function touch(MigrationCase $case): void
     {
-        if (!$case->submitted_at) {
+        if ($this->isDraft($case)) {
             $case->update(['last_activity_at' => now()]);
+        }
+    }
+
+    private function assertSnapshotIntegrity(MigrationCase $case, User $user): void
+    {
+        $errors = [];
+
+        if (!$case->profile) {
+            $errors[] = 'migration_profile_missing';
+        } elseif ((int) $case->profile->source_user_id !== (int) $user->id
+            || (int) data_get($case->profile->source_snapshot, 'id') !== (int) $user->id) {
+            $errors[] = 'migration_profile_owner_mismatch';
+        } elseif (!$this->isDraft($case) && empty($case->profile->source_snapshot)) {
+            $errors[] = 'migration_profile_source_snapshot_missing';
+        }
+
+        if ($case->items->contains(fn (MigrationItem $item) =>
+            (int) $item->source_user_id !== (int) $user->id
+            || (int) data_get($item->source_snapshot, 'user_id') !== (int) $user->id
+        )) {
+            $errors[] = 'migration_item_owner_mismatch';
+        }
+
+        if (!$this->isDraft($case)) {
+            if ($case->items->contains(fn (MigrationItem $item) => empty($item->source_snapshot))) {
+                $errors[] = 'migration_item_source_snapshot_missing';
+            }
+
+            $snapshotCutoff = $case->submitted_at ?: $case->campaign?->response_deadline;
+            if ($snapshotCutoff) {
+                $expectedItemIds = Item::withTrashed()
+                    ->where('user_id', $user->id)
+                    ->where('created_at', '<=', $snapshotCutoff)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id);
+                $storedItemIds = $case->items->pluck('source_item_id')->map(fn ($id) => (int) $id);
+
+                if ($expectedItemIds->diff($storedItemIds)->isNotEmpty()) {
+                    $errors[] = 'migration_item_snapshots_missing';
+                }
+            }
+        }
+
+        if ($errors) {
+            Log::error('Migration snapshot integrity check failed.', [
+                'migration_case_id' => $case->id,
+                'user_id' => $user->id,
+                'errors' => $errors,
+            ]);
+
+            abort(response([
+                'message' => 'The stored migration snapshot is incomplete or does not belong to this account.',
+                'code' => 'MIGRATION_SNAPSHOT_INTEGRITY_ERROR',
+            ], 409));
         }
     }
 

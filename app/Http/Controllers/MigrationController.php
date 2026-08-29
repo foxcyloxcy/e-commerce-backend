@@ -16,6 +16,7 @@ use App\Services\TaggyMigrationExportValidator;
 use App\Services\TaggyMigrationMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MigrationController extends Controller
 {
@@ -38,7 +39,9 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
         $this->caseService->touch($case);
-        $this->taggyMapper->prepareProfile($this->migrationProfile($case));
+        if ($this->caseService->isDraft($case)) {
+            $this->taggyMapper->prepareProfile($this->migrationProfile($case));
+        }
 
         return response(['data' => $this->profilePayload($case->fresh('profile'))], 200);
     }
@@ -47,8 +50,8 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
 
-        if ($case->submitted_at) {
-            return response(['message' => 'Your migration preference has already been submitted and is locked.'], 409);
+        if (!$this->caseService->isDraft($case)) {
+            return response(['message' => 'Your migration preference has already been finalized and is locked.'], 409);
         }
 
         $profile = $this->migrationProfile($case);
@@ -63,8 +66,10 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
         $this->caseService->touch($case);
-        foreach ($case->items as $item) {
-            $this->taggyMapper->prepareItem($item);
+        if ($this->caseService->isDraft($case)) {
+            foreach ($case->items as $item) {
+                $this->taggyMapper->prepareItem($item);
+            }
         }
 
         return response(['data' => $this->itemsPayload($case->fresh())], 200);
@@ -75,8 +80,8 @@ class MigrationController extends Controller
         $user = auth('auth-api')->user();
         $case = $this->caseService->ensureCaseFor($user);
 
-        if ($case->submitted_at) {
-            return response(['message' => 'Your migration preference has already been submitted and is locked.'], 409);
+        if (!$this->caseService->isDraft($case)) {
+            return response(['message' => 'Your migration preference has already been finalized and is locked.'], 409);
         }
 
         $selectedIds = collect($request->validated()['selected_item_ids'])->map(fn ($id) => (int) $id)->unique()->values();
@@ -132,6 +137,10 @@ class MigrationController extends Controller
 
             if ($case->submitted_at) {
                 return $case;
+            }
+
+            if (!$this->caseService->isDraft($case)) {
+                abort(response(['message' => 'This migration case is finalized and cannot be changed.'], 409));
             }
 
             if ($case->campaign->response_deadline && $case->campaign->response_deadline->isPast()) {
@@ -274,9 +283,15 @@ class MigrationController extends Controller
         $case->loadMissing('profile');
 
         if (!$case->profile) {
+            Log::error('Migration profile relation missing after initialization.', [
+                'migration_case_id' => $case->id,
+                'user_id' => $case->source_user_id,
+            ]);
+
             abort(response([
                 'message' => 'The migration profile could not be initialized for this account.',
-            ], 500));
+                'code' => 'MIGRATION_SNAPSHOT_INTEGRITY_ERROR',
+            ], 409));
         }
 
         return $case->profile;
