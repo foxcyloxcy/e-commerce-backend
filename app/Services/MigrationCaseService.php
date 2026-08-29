@@ -8,6 +8,7 @@ use App\Models\MigrationCase;
 use App\Models\MigrationItem;
 use App\Models\MigrationProfile;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class MigrationCaseService
@@ -20,8 +21,16 @@ class MigrationCaseService
     {
         $campaign = MigrationCampaign::where('active', true)->orderByDesc('id')->first();
 
+        $deadline = Carbon::parse(config('taggy_migration.response_deadline'))->utc();
+
         if (!$campaign) {
-            $campaign = MigrationCampaign::create(['name' => 'Reloved to Taggy', 'active' => true]);
+            $campaign = MigrationCampaign::create([
+                'name' => 'Reloved to Taggy',
+                'response_deadline' => $deadline,
+                'active' => true,
+            ]);
+        } elseif (!$campaign->response_deadline) {
+            $campaign->update(['response_deadline' => $deadline]);
         }
 
         return $campaign;

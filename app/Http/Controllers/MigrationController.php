@@ -11,6 +11,8 @@ use App\Models\MigrationConsentVersion;
 use App\Models\MigrationDecisionAudit;
 use App\Services\MigrationCaseService;
 use App\Services\TaggyMigrationEligibilityService;
+use App\Services\TaggyMigrationExportValidator;
+use App\Services\TaggyMigrationMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +20,9 @@ class MigrationController extends Controller
 {
     public function __construct(
         private MigrationCaseService $caseService,
-        private TaggyMigrationEligibilityService $eligibilityService
+        private TaggyMigrationEligibilityService $eligibilityService,
+        private TaggyMigrationMapper $taggyMapper,
+        private TaggyMigrationExportValidator $exportValidator
     ) {
     }
 
@@ -33,8 +37,9 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
         $this->caseService->touch($case);
+        $this->taggyMapper->prepareProfile($case->profile);
 
-        return response(['data' => $this->profilePayload($case)], 200);
+        return response(['data' => $this->profilePayload($case->fresh('profile'))], 200);
     }
 
     public function updateProfile(UpdateMigrationProfileRequest $request)
@@ -46,6 +51,7 @@ class MigrationController extends Controller
         }
 
         $case->profile->update($request->validated());
+        $this->taggyMapper->prepareProfile($case->profile->fresh());
         $this->caseService->touch($case);
 
         return response(['data' => $this->profilePayload($case->fresh('profile')), 'message' => 'Migration profile draft saved.'], 200);
@@ -55,8 +61,11 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
         $this->caseService->touch($case);
+        foreach ($case->items as $item) {
+            $this->taggyMapper->prepareItem($item);
+        }
 
-        return response(['data' => $this->itemsPayload($case)], 200);
+        return response(['data' => $this->itemsPayload($case->fresh())], 200);
     }
 
     public function updateItems(UpdateMigrationItemsRequest $request)
@@ -90,6 +99,9 @@ class MigrationController extends Controller
                 $case->items()->whereIn('source_item_id', $selectedIds)->where('eligible', true)->where('source_user_id', $user->id)->update(['selected' => true]);
             }
             $this->caseService->touch($case);
+            foreach ($case->items()->get() as $migrationItem) {
+                $this->taggyMapper->prepareItem($migrationItem);
+            }
 
             return $selectedIds->count();
         });
@@ -123,6 +135,8 @@ class MigrationController extends Controller
             if ($case->campaign->response_deadline && $case->campaign->response_deadline->isPast()) {
                 abort(response(['message' => 'The migration response deadline has passed.'], 422));
             }
+
+            $this->taggyMapper->prepareCase($case);
 
             $consentType = $this->consentTypeForDecision($decision);
             $consentVersion = MigrationConsentVersion::where('active', true)->where('consent_type', $consentType)->orderByDesc('id')->first();
@@ -228,6 +242,7 @@ class MigrationController extends Controller
             'response_deadline' => optional($case->campaign?->response_deadline)->toISOString(),
             'selected_item_count' => $case->items->where('selected', true)->where('eligible', true)->count(),
             'audit_count' => $case->audits->count(),
+            'export_validation' => $case->submitted_at ? $this->exportValidator->validateCase($case) : null,
         ];
     }
 
@@ -248,6 +263,8 @@ class MigrationController extends Controller
             'source_user_id' => $profile->source_user_id,
             'source_updated_at' => optional($profile->source_updated_at)->toISOString(),
             'snapshot_at' => optional($profile->snapshot_at)->toISOString(),
+            'mapping_status' => $profile->mapping_status,
+            'mapping_errors' => $profile->mapping_errors ?: [],
         ];
     }
 
@@ -277,6 +294,8 @@ class MigrationController extends Controller
                 'condition' => data_get($properties->firstWhere('property_name', 'Condition'), 'value_name'),
                 'source_updated_at' => optional($migrationItem->source_updated_at)->toISOString(),
                 'snapshot_at' => optional($migrationItem->snapshot_at)->toISOString(),
+                'mapping_status' => $migrationItem->mapping_status,
+                'mapping_errors' => $migrationItem->mapping_errors ?: [],
             ];
         })->values()->all();
     }
