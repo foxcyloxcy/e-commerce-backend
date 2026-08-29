@@ -44,26 +44,24 @@ class MigrationCaseService
             $vendorId = DB::table('vendors')->where('user_id', $user->id)->value('id');
             $now = now();
 
-            $case = MigrationCase::firstOrCreate(
-                ['campaign_id' => $campaign->id, 'source_user_id' => $user->id],
-                [
-                    'source_vendor_id' => $vendorId,
-                    'status' => MigrationCase::STATUS_IN_PROGRESS,
-                    'started_at' => $now,
-                    'last_activity_at' => $now,
-                ]
-            );
+            DB::table('migration_cases')->insertOrIgnore([
+                'campaign_id' => $campaign->id,
+                'source_user_id' => $user->id,
+                'source_vendor_id' => $vendorId,
+                'status' => MigrationCase::STATUS_IN_PROGRESS,
+                'started_at' => $now,
+                'last_activity_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            // The unique campaign/user key selects the one canonical row regardless
+            // of which concurrent request won the insert.
+            $case = MigrationCase::where('campaign_id', $campaign->id)
+                ->where('source_user_id', $user->id)
+                ->firstOrFail();
 
             if ($this->isDraft($case)) {
-                $case->fill([
-                    'source_vendor_id' => $vendorId,
-                    'status' => $case->status === MigrationCase::STATUS_PENDING ? MigrationCase::STATUS_IN_PROGRESS : $case->status,
-                    'started_at' => $case->started_at ?: $now,
-                    'last_activity_at' => $now,
-                ])->save();
-
-                // Draft-only repair. firstOrCreate preserves reviewed profile edits,
-                // item selections, and every existing source snapshot.
                 $this->ensureProfileSnapshot($case, $user);
                 $this->ensureItemSnapshots($case, $user, $vendorId);
             }
@@ -164,52 +162,65 @@ class MigrationCaseService
 
     private function ensureProfileSnapshot(MigrationCase $case, User $user): void
     {
-        MigrationProfile::firstOrCreate(
-            ['migration_case_id' => $case->id],
-            [
-                'source_user_id' => $user->id,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'mobile_number' => $user->mobile_number,
-                'address' => $user->address,
-                'gender' => $user->gender,
-                'date_of_birth' => $user->date_of_birth,
-                'source_snapshot' => $this->userSourceSnapshot($user),
-                'source_updated_at' => $user->updated_at,
-                'snapshot_at' => now(),
-            ]
-        );
+        $now = now();
+        DB::table('migration_profiles')->insertOrIgnore([
+            'migration_case_id' => $case->id,
+            'source_user_id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'mobile_number' => $user->mobile_number,
+            'address' => $user->address,
+            'gender' => $user->gender,
+            'date_of_birth' => $user->date_of_birth,
+            'source_snapshot' => json_encode($this->userSourceSnapshot($user), JSON_THROW_ON_ERROR),
+            'source_updated_at' => $user->updated_at,
+            'snapshot_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // Fetching the canonical row also waits for any competing insert to finish.
+        MigrationProfile::where('migration_case_id', $case->id)->firstOrFail();
     }
 
     private function ensureItemSnapshots(MigrationCase $case, User $user, ?int $vendorId): void
     {
-        $items = Item::withTrashed()->where('user_id', $user->id)->get();
+        $existingItemIds = MigrationItem::where('migration_case_id', $case->id)
+            ->pluck('source_item_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $items = Item::withTrashed()
+            ->where('user_id', $user->id)
+            ->whereNotIn('id', $existingItemIds)
+            ->get();
+        $now = now();
+        $rows = [];
 
         foreach ($items as $item) {
-            if (MigrationItem::where('migration_case_id', $case->id)->where('source_item_id', $item->id)->exists()) {
-                continue;
-            }
-
             $eligibility = $this->eligibilityService->evaluate($item);
             $categoryId = $this->eligibilityService->categoryIdFor($item);
-
-            MigrationItem::firstOrCreate([
+            $rows[] = [
                 'migration_case_id' => $case->id,
-                'source_item_id' => $item->id,
-            ], [
                 'source_user_id' => $user->id,
                 'source_vendor_id' => $vendorId,
+                'source_item_id' => $item->id,
                 'source_category_id' => $categoryId,
                 'source_sub_category_id' => $item->sub_category_id,
                 'source_status' => $item->status,
                 'eligible' => $eligibility['eligible'],
                 'eligibility_reason' => $eligibility['reason'],
                 'selected' => false,
-                'source_snapshot' => $this->itemSourceSnapshot($item, $categoryId),
+                'source_snapshot' => json_encode($this->itemSourceSnapshot($item, $categoryId), JSON_THROW_ON_ERROR),
                 'source_updated_at' => $item->updated_at,
-                'snapshot_at' => now(),
-            ]);
+                'snapshot_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        if ($rows) {
+            DB::table('migration_items')->insertOrIgnore($rows);
         }
     }
 
