@@ -60,10 +60,12 @@ class MigrationCaseService
                     'started_at' => $case->started_at ?: $now,
                     'last_activity_at' => $now,
                 ])->save();
-
-                $this->ensureProfileSnapshot($case, $user);
-                $this->ensureItemSnapshots($case, $user, $vendorId);
             }
+
+            // Repair older/incomplete cases independently of case status. firstOrCreate
+            // preserves an existing migration draft and never writes back to Reloved.
+            $this->ensureProfileSnapshot($case, $user);
+            $this->ensureItemSnapshots($case, $user, $vendorId);
 
             return $case->fresh(['campaign', 'profile', 'items']);
         });
@@ -127,11 +129,12 @@ class MigrationCaseService
             $eligibility = $this->eligibilityService->evaluate($item);
             $categoryId = $this->eligibilityService->categoryIdFor($item);
 
-            MigrationItem::create([
+            MigrationItem::firstOrCreate([
                 'migration_case_id' => $case->id,
+                'source_item_id' => $item->id,
+            ], [
                 'source_user_id' => $user->id,
                 'source_vendor_id' => $vendorId,
-                'source_item_id' => $item->id,
                 'source_category_id' => $categoryId,
                 'source_sub_category_id' => $item->sub_category_id,
                 'source_status' => $item->status,

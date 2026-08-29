@@ -9,6 +9,7 @@ use App\Models\Item;
 use App\Models\MigrationCase;
 use App\Models\MigrationConsentVersion;
 use App\Models\MigrationDecisionAudit;
+use App\Models\MigrationProfile;
 use App\Services\MigrationCaseService;
 use App\Services\TaggyMigrationEligibilityService;
 use App\Services\TaggyMigrationExportValidator;
@@ -37,7 +38,7 @@ class MigrationController extends Controller
     {
         $case = $this->caseService->ensureCaseFor(auth('auth-api')->user());
         $this->caseService->touch($case);
-        $this->taggyMapper->prepareProfile($case->profile);
+        $this->taggyMapper->prepareProfile($this->migrationProfile($case));
 
         return response(['data' => $this->profilePayload($case->fresh('profile'))], 200);
     }
@@ -50,8 +51,9 @@ class MigrationController extends Controller
             return response(['message' => 'Your migration preference has already been submitted and is locked.'], 409);
         }
 
-        $case->profile->update($request->validated());
-        $this->taggyMapper->prepareProfile($case->profile->fresh());
+        $profile = $this->migrationProfile($case);
+        $profile->update($request->validated());
+        $this->taggyMapper->prepareProfile($profile->fresh());
         $this->caseService->touch($case);
 
         return response(['data' => $this->profilePayload($case->fresh('profile')), 'message' => 'Migration profile draft saved.'], 200);
@@ -248,8 +250,7 @@ class MigrationController extends Controller
 
     private function profilePayload(MigrationCase $case): array
     {
-        $case->loadMissing('profile');
-        $profile = $case->profile;
+        $profile = $this->migrationProfile($case);
 
         return [
             'first_name' => $profile->first_name,
@@ -266,6 +267,19 @@ class MigrationController extends Controller
             'mapping_status' => $profile->mapping_status,
             'mapping_errors' => $profile->mapping_errors ?: [],
         ];
+    }
+
+    private function migrationProfile(MigrationCase $case): MigrationProfile
+    {
+        $case->loadMissing('profile');
+
+        if (!$case->profile) {
+            abort(response([
+                'message' => 'The migration profile could not be initialized for this account.',
+            ], 500));
+        }
+
+        return $case->profile;
     }
 
     private function itemsPayload(MigrationCase $case): array
