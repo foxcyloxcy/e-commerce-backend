@@ -299,34 +299,43 @@ class MigrationController extends Controller
 
     private function itemsPayload(MigrationCase $case): array
     {
-        return $case->items()->orderBy('eligible', 'desc')->orderBy('source_item_id')->get()->map(function ($migrationItem) {
-            $snapshot = $migrationItem->source_snapshot ?: [];
-            $properties = collect(data_get($snapshot, 'properties', []));
-            $images = collect(data_get($snapshot, 'images', []));
+        $currentSourceItemIds = Item::where('user_id', $case->source_user_id)
+            ->where('status', Item::STATUS_PUBLISHED)
+            ->pluck('id');
 
-            return [
-                'source_item_id' => $migrationItem->source_item_id,
-                'source_user_id' => $migrationItem->source_user_id,
-                'source_vendor_id' => $migrationItem->source_vendor_id,
-                'source_category_id' => $migrationItem->source_category_id,
-                'source_sub_category_id' => $migrationItem->source_sub_category_id,
-                'source_status' => $migrationItem->source_status,
-                'status_name' => data_get($snapshot, 'status_name'),
-                'active' => (int) $migrationItem->source_status === Item::STATUS_PUBLISHED,
-                'eligible' => $migrationItem->eligible,
-                'eligibility_reason' => $migrationItem->eligibility_reason,
-                'selected' => $migrationItem->selected,
-                'item_name' => data_get($snapshot, 'item_name'),
-                'price' => data_get($snapshot, 'price'),
-                'thumbnail_url' => data_get($images->first(), 'image_url'),
-                'size' => data_get($properties->firstWhere('property_name', 'Size'), 'value_name'),
-                'condition' => data_get($properties->firstWhere('property_name', 'Condition'), 'value_name'),
-                'source_updated_at' => optional($migrationItem->source_updated_at)->toISOString(),
-                'snapshot_at' => optional($migrationItem->snapshot_at)->toISOString(),
-                'mapping_status' => $migrationItem->mapping_status,
-                'mapping_errors' => $migrationItem->mapping_errors ?: [],
-            ];
-        })->values()->all();
+        return $case->items()
+            ->whereIn('source_item_id', $currentSourceItemIds)
+            ->orderBy('eligible', 'desc')
+            ->orderBy('source_item_id')
+            ->get()
+            ->map(function ($migrationItem) {
+                $snapshot = $migrationItem->source_snapshot ?: [];
+                $properties = collect(data_get($snapshot, 'properties', []));
+                $images = collect(data_get($snapshot, 'images', []));
+
+                return [
+                    'source_item_id' => $migrationItem->source_item_id,
+                    'source_user_id' => $migrationItem->source_user_id,
+                    'source_vendor_id' => $migrationItem->source_vendor_id,
+                    'source_category_id' => $migrationItem->source_category_id,
+                    'source_sub_category_id' => $migrationItem->source_sub_category_id,
+                    'source_status' => $migrationItem->source_status,
+                    'status_name' => Item::STATUSES[Item::STATUS_PUBLISHED],
+                    'active' => true,
+                    'eligible' => $migrationItem->eligible,
+                    'eligibility_reason' => $migrationItem->eligibility_reason,
+                    'selected' => $migrationItem->selected,
+                    'item_name' => data_get($snapshot, 'item_name'),
+                    'price' => data_get($snapshot, 'price'),
+                    'thumbnail_url' => data_get($images->first(), 'image_url'),
+                    'size' => data_get($properties->firstWhere('property_name', 'Size'), 'value_name'),
+                    'condition' => data_get($properties->firstWhere('property_name', 'Condition'), 'value_name'),
+                    'source_updated_at' => optional($migrationItem->source_updated_at)->toISOString(),
+                    'snapshot_at' => optional($migrationItem->snapshot_at)->toISOString(),
+                    'mapping_status' => $migrationItem->mapping_status,
+                    'mapping_errors' => $migrationItem->mapping_errors ?: [],
+                ];
+            })->values()->all();
     }
 
     private function confirmationPayload(MigrationCase $case): array

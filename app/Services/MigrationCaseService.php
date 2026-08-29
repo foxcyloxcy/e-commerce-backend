@@ -59,6 +59,7 @@ class MigrationCaseService
             if ($this->isDraft($lockedCase)) {
                 $this->ensureProfileSnapshot($lockedCase, $user);
                 $this->ensureItemSnapshots($lockedCase, $user, $vendorId);
+                $this->refreshDraftItemEligibility($lockedCase, $user);
             }
 
             $lockedCase = $lockedCase->fresh(['campaign', 'profile', 'items', 'audits']);
@@ -269,6 +270,38 @@ class MigrationCaseService
 
         if ($rows) {
             DB::table('migration_items')->insert($rows);
+        }
+    }
+
+    private function refreshDraftItemEligibility(MigrationCase $case, User $user): void
+    {
+        $migrationItems = MigrationItem::where('migration_case_id', $case->id)->get();
+        $sourceItems = Item::withTrashed()
+            ->where('user_id', $user->id)
+            ->whereIn('id', $migrationItems->pluck('source_item_id'))
+            ->get()
+            ->keyBy('id');
+
+        foreach ($migrationItems as $migrationItem) {
+            $sourceItem = $sourceItems->get($migrationItem->source_item_id);
+            $eligibility = $sourceItem
+                ? $this->eligibilityService->evaluate($sourceItem)
+                : ['eligible' => false, 'reason' => 'Reloved listing is no longer available'];
+            $updates = [];
+
+            if ((bool) $migrationItem->eligible !== (bool) $eligibility['eligible']) {
+                $updates['eligible'] = $eligibility['eligible'];
+            }
+            if ($migrationItem->eligibility_reason !== $eligibility['reason']) {
+                $updates['eligibility_reason'] = $eligibility['reason'];
+            }
+            if (!$eligibility['eligible'] && $migrationItem->selected) {
+                $updates['selected'] = false;
+            }
+
+            if ($updates) {
+                $migrationItem->update($updates);
+            }
         }
     }
 

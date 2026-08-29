@@ -9,6 +9,14 @@ class TaggyMigrationEligibilityService
 {
     public function evaluate(Item $item): array
     {
+        if ($item->trashed()) {
+            return ['eligible' => false, 'reason' => 'Deleted Reloved listing'];
+        }
+
+        if ((int) $item->status !== Item::STATUS_PUBLISHED) {
+            return ['eligible' => false, 'reason' => 'Reloved listing is not currently active'];
+        }
+
         $subCategory = DB::table('sub_categories')->where('id', $item->sub_category_id)->first();
 
         if (!$subCategory) {
