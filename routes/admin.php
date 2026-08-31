@@ -57,6 +57,12 @@ Route::group(['middleware' => 'auth:admin-api'], function () {
     Route::group(['prefix' => 'users'], function () {
         Route::get('', [\App\Http\Controllers\AdminUserController::class, 'index']);
     });
+
+    #Taggy migrations
+    Route::group(['prefix' => 'migrations'], function () {
+        Route::get('', [\App\Http\Controllers\AdminMigrationController::class, 'index']);
+        Route::get('{migrationCase}', [\App\Http\Controllers\AdminMigrationController::class, 'show']);
+    });
    
 });
 
