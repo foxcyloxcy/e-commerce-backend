@@ -20,9 +20,17 @@ class UpdateMigrationProfileRequest extends FormRequest
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'mobile_number' => 'nullable|string|max:30',
-            'address' => 'nullable|string|max:2000',
+            'address' => 'required|string|max:2000',
             'gender' => 'nullable|integer|in:0,1,2',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'required|date',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'address.required' => 'Address is required.',
+            'date_of_birth.required' => 'Date of birth is required.',
         ];
     }
 

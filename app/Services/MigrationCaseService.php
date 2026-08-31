@@ -191,6 +191,8 @@ class MigrationCaseService
 
     private function userSourceSnapshot(User $user): array
     {
+        $address = $this->sourceAddress($user);
+
         return [
             'id' => $user->id,
             'uuid' => $user->uuid,
@@ -198,7 +200,9 @@ class MigrationCaseService
             'last_name' => $user->last_name,
             'email' => $user->email,
             'mobile_number' => $user->mobile_number,
-            'address' => $user->address,
+            'address' => $address,
+            'user_address' => $user->address,
+            'vendor_address' => $user->vendor?->address,
             'photo' => $user->photo,
             'gender' => $user->gender,
             'date_of_birth' => $user->date_of_birth,
@@ -215,6 +219,7 @@ class MigrationCaseService
         }
 
         $now = now();
+        $address = $this->sourceAddress($user);
         DB::table('migration_profiles')->insert([
             'migration_case_id' => $case->id,
             'source_user_id' => $user->id,
@@ -222,7 +227,7 @@ class MigrationCaseService
             'last_name' => $user->last_name,
             'email' => $user->email,
             'mobile_number' => $user->mobile_number,
-            'address' => $user->address,
+            'address' => $address,
             'gender' => $user->gender,
             'date_of_birth' => $user->date_of_birth,
             'source_snapshot' => json_encode($this->userSourceSnapshot($user), JSON_THROW_ON_ERROR),
@@ -231,6 +236,15 @@ class MigrationCaseService
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+    }
+
+    private function sourceAddress(User $user): ?string
+    {
+        // Reloved's seller profile stores the address on vendors. Personal-info
+        // updates mirror it to users, so retain users.address as the legacy fallback.
+        $vendorAddress = $user->vendor?->address;
+
+        return filled($vendorAddress) ? $vendorAddress : $user->address;
     }
 
     private function ensureItemSnapshots(MigrationCase $case, User $user, ?int $vendorId): void

@@ -17,6 +17,7 @@ use App\Services\TaggyMigrationMapper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class MigrationController extends Controller
 {
@@ -147,6 +148,13 @@ class MigrationController extends Controller
                 abort(response(['message' => 'The migration response deadline has passed.'], 422));
             }
 
+            if (in_array($decision, [
+                MigrationCase::STATUS_CONSENT_ACCOUNT_AND_ITEMS,
+                MigrationCase::STATUS_CONSENT_ACCOUNT_ONLY,
+            ], true)) {
+                $this->validateRequiredMigrationProfile($case);
+            }
+
             $this->taggyMapper->prepareCase($case);
 
             $consentType = $this->consentTypeForDecision($decision);
@@ -224,6 +232,19 @@ class MigrationController extends Controller
                 abort(response(['message' => 'Unsupported listings cannot be submitted for Taggy migration.'], 422));
             }
         }
+    }
+
+    private function validateRequiredMigrationProfile(MigrationCase $case): void
+    {
+        $profile = $this->migrationProfile($case);
+
+        Validator::make($profile->only(['address', 'date_of_birth']), [
+            'address' => 'required|string|max:2000',
+            'date_of_birth' => 'required|date',
+        ], [
+            'address.required' => 'Address is required before agreeing to migrate.',
+            'date_of_birth.required' => 'Date of birth is required before agreeing to migrate.',
+        ])->validate();
     }
 
     private function consentTypeForDecision(string $decision): string
