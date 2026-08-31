@@ -238,10 +238,20 @@ class MigrationController extends Controller
     {
         $profile = $this->migrationProfile($case);
 
-        Validator::make($profile->only(['address', 'date_of_birth']), [
+        Validator::make($profile->only([
+            'first_name', 'last_name', 'email', 'mobile_number', 'address', 'date_of_birth',
+        ]), [
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'mobile_number' => 'required|string|max:30',
             'address' => 'required|string|max:2000',
             'date_of_birth' => 'required|date',
         ], [
+            'first_name.required' => 'First name is required before agreeing to migrate.',
+            'last_name.required' => 'Last name is required before agreeing to migrate.',
+            'email.required' => 'Email address is required before agreeing to migrate.',
+            'mobile_number.required' => 'Phone number is required before agreeing to migrate.',
             'address.required' => 'Address is required before agreeing to migrate.',
             'date_of_birth.required' => 'Date of birth is required before agreeing to migrate.',
         ])->validate();
