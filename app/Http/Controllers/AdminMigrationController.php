@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MigrationCase;
 use App\Models\MigrationDecisionAudit;
 use App\Models\MigrationItem;
+use App\Services\TaggyMigrationExportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -18,44 +19,59 @@ class AdminMigrationController extends Controller
     public function index(Request $request)
     {
         $size = max(1, min((int) ($request->size ?: 10), 100));
-        $query = $this->consentedCasesQuery()->with([
+        $data = $this->filteredConsentedCasesQuery($request)->with([
             'profile',
             'audits' => fn ($auditQuery) => $auditQuery
                 ->whereIn('decision', self::CONSENTED_DECISIONS)
                 ->whereNotNull('submitted_at')
                 ->orderByDesc('submitted_at'),
-        ]);
-
-        $keyword = trim((string) ($request->search ?: data_get($request->filter, 'keyword', '')));
-        if ($keyword !== '') {
-            $query->whereHas('profile', function (Builder $profileQuery) use ($keyword) {
-                $profileQuery->where(function (Builder $searchQuery) use ($keyword) {
-                    $searchQuery->where('first_name', 'LIKE', "%{$keyword}%")
-                        ->orWhere('last_name', 'LIKE', "%{$keyword}%")
-                        ->orWhere('email', 'LIKE', "%{$keyword}%")
-                        ->orWhereRaw("concat(first_name, ' ', last_name) LIKE ?", ["%{$keyword}%"]);
-                });
-            });
-        }
-
-        if (in_array($request->decision, self::CONSENTED_DECISIONS, true)) {
-            $query->where('status', $request->decision);
-        }
-
-        if (in_array($request->mapping_status, ['complete', 'incomplete'], true)) {
-            $query->whereHas('profile', fn (Builder $profileQuery) => $profileQuery->where('mapping_status', $request->mapping_status)
-            );
-        }
-
-        if (is_string($request->submitted_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->submitted_date)) {
-            $query->whereDate('submitted_at', $request->submitted_date);
-        }
-
-        $data = $query->orderByDesc('submitted_at')->paginate($size)->through(
+        ])->orderByDesc('submitted_at')->paginate($size)->through(
             fn (MigrationCase $case) => $this->listPayload($case)
         );
 
         return response(['data' => $data], 200);
+    }
+
+    public function exportCsv(Request $request, TaggyMigrationExportService $exporter)
+    {
+        return response()->streamDownload(function () use ($request, $exporter) {
+            $stream = fopen('php://output', 'w');
+            fwrite($stream, "\xEF\xBB\xBF");
+            fputcsv($stream, $exporter->columns(), ',', '"', '');
+
+            $this->streamExportRows($request, $exporter, function (array $row) use ($stream) {
+                $safeRow = array_map(fn ($value) => is_string($value) && preg_match('/^[\t\r ]*[=+\-@]/', $value) ? "'{$value}" : $value, $row);
+                fputcsv($stream, $safeRow, ',', '"', '');
+            });
+
+            fclose($stream);
+        }, 'reloved-taggy-consented-'.now()->format('Y-m-d-His').'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function exportSql(Request $request, TaggyMigrationExportService $exporter)
+    {
+        $table = 'reloved_taggy_migration_'.now()->utc()->format('Ymd_His');
+
+        return response()->streamDownload(function () use ($request, $exporter, $table) {
+            $stream = fopen('php://output', 'w');
+            $columns = $exporter->columns();
+            $quotedColumns = implode(', ', array_map(fn ($column) => '"'.str_replace('"', '""', $column).'"', $columns));
+            $definitions = implode(",\n    ", array_map(fn ($column) => '"'.str_replace('"', '""', $column).'" TEXT', $columns));
+
+            fwrite($stream, "-- Reloved consented migration staging data for Taggy.\n");
+            fwrite($stream, "-- Blank target IDs were unresolved at export time and must be mapped before production import.\n");
+            fwrite($stream, "CREATE TABLE \"{$table}\" (\n    {$definitions}\n);\n\n");
+            fwrite($stream, "COPY \"{$table}\" ({$quotedColumns}) FROM STDIN WITH (FORMAT csv);\n");
+
+            $this->streamExportRows($request, $exporter, fn (array $row) => fputcsv($stream, $row, ',', '"', ''));
+
+            fwrite($stream, "\\.\n");
+            fclose($stream);
+        }, $table.'.sql', [
+            'Content-Type' => 'application/sql; charset=UTF-8',
+        ]);
     }
 
     public function show(int $migrationCase)
@@ -112,6 +128,55 @@ class AdminMigrationController extends Controller
             ],
             'items' => $items,
         ]], 200);
+    }
+
+    private function filteredConsentedCasesQuery(Request $request): Builder
+    {
+        $query = $this->consentedCasesQuery();
+        $keyword = trim((string) ($request->search ?: data_get($request->filter, 'keyword', '')));
+
+        if ($keyword !== '') {
+            $query->whereHas('profile', function (Builder $profileQuery) use ($keyword) {
+                $profileQuery->where(function (Builder $searchQuery) use ($keyword) {
+                    $searchQuery->where('first_name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('last_name', 'LIKE', "%{$keyword}%")
+                        ->orWhere('email', 'LIKE', "%{$keyword}%")
+                        ->orWhereRaw("concat(first_name, ' ', last_name) LIKE ?", ["%{$keyword}%"]);
+                });
+            });
+        }
+
+        if (in_array($request->decision, self::CONSENTED_DECISIONS, true)) {
+            $query->where('status', $request->decision);
+        }
+
+        if (in_array($request->mapping_status, ['complete', 'incomplete'], true)) {
+            $query->whereHas('profile', fn (Builder $profileQuery) => $profileQuery->where('mapping_status', $request->mapping_status));
+        }
+
+        if (is_string($request->submitted_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->submitted_date)) {
+            $query->whereDate('submitted_at', $request->submitted_date);
+        }
+
+        return $query;
+    }
+
+    private function streamExportRows(Request $request, TaggyMigrationExportService $exporter, callable $write): void
+    {
+        $this->filteredConsentedCasesQuery($request)
+            ->with(['profile', 'items', 'audits'])
+            ->chunkById(100, function ($cases) use ($exporter, $write) {
+                foreach ($cases as $case) {
+                    $audit = $this->matchingAudit($case);
+                    if (! $audit) {
+                        continue;
+                    }
+
+                    foreach ($exporter->rows($case, $audit) as $row) {
+                        $write($row);
+                    }
+                }
+            });
     }
 
     private function consentedCasesQuery(): Builder
